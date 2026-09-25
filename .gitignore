@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Test and tooling caches
+.pytest_cache/
+
+# Raw participant data (stays local; fixtures under tests/data are committed)
+data/
+
+# Analysis output
+*.results.csv
+results*.csv

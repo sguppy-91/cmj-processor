@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cmj-processor"
+version = "0.1.0"
+description = "Plate-agnostic countermovement jump force-time analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+cmj-gui = "cmj.app.gui:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cmj"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
