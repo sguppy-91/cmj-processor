@@ -1,19 +1,40 @@
 #!/bin/bash
 # CMJ analysis GUI launcher - double-click to run.
-# Tries the installed entry point first, then falls back to the module form.
-if command -v cmj-gui >/dev/null 2>&1; then
-    cmj-gui
-else
-    echo "cmj-gui not on PATH - trying python3 -m cmj.app.gui ..."
-    python3 -m cmj.app.gui
+
+# Find the project directory relative to this launcher.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+VENV_PYTHON="$PROJECT_DIR/.venv/bin/python"
+
+if [ ! -x "$VENV_PYTHON" ]; then
+    echo "CMJ Processor virtual environment not found."
+    echo ""
+    echo "Expected:"
+    echo "  $VENV_PYTHON"
+    echo ""
+    echo "To create it, run:"
+    echo "  cd \"$PROJECT_DIR\""
+    echo "  python3 -m venv .venv"
+    echo "  source .venv/bin/activate"
+    echo "  python -m pip install -e ."
+    echo ""
+    echo "Press any key to close this window..."
+    read -n 1 -s
+    exit 1
 fi
+
+cd "$PROJECT_DIR"
+
+MPLBACKEND=TKAgg "$VENV_PYTHON" -m cmj.app.gui
+
 status=$?
+
 if [ $status -ne 0 ]; then
     echo ""
-    echo "Launch failed (exit code $status). To fix, run in Terminal:"
-    echo "  cd ~/Documents/Python\\ Environments/cmj-processor"
-    echo "  python3 -m pip install -e ."
+    echo "CMJ Processor failed to launch (exit code $status)."
+    echo ""
+    echo "Press any key to close this window..."
+    read -n 1 -s
 fi
-echo ""
-echo "Press any key to close this window..."
-read -n 1 -s
+
+exit $status
