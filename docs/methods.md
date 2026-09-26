@@ -302,5 +302,6 @@ rediscovered the hard way:
   M. A. (2014). Development of a criterion method to determine peak
   mechanical power output in a countermovement jump. *Journal of
   Strength and Conditioning Research*, 28(6), 1552–1558.
-- Guppy, S. et al. (2024). [2024 IJSSC deadlift-stability manuscript —
-  full citation to be inserted from the manuscript's reference list.]
+- Guppy, S. N., Nagatani, T., Poon, W. C. K., Kendall, K. L., Lake, J. P.,
+  & Haff, G. G. (2024). The stability of the deadlift three repetition maximum.
+  *International Journal of Sports Science & Coaching*, 19(2), 812-821. 
