@@ -44,3 +44,17 @@ anywhere - the Desktop is a good spot).
 
 The full methodological write-up, mapped one-to-one onto the code, is in
 [docs/methods.md](docs/methods.md).
+
+## Development
+This software was developed with assistance from AI coding tools, including
+the GLM-5.3 (Z.ai, China; hosted by Mistral AI) large language model and the 
+Mistral Vibe CLI coding agent (version 2.25.8).
+
+AI assistance was used for software design discussion, code generation and 
+refactoring, test development, documentation, and debugging. The analytical 
+methods, methodological decisions, project requirements, and overall software 
+architecture were specified and reviewed by the project author. AI-generated code 
+was reviewed, tested, and revised as part of the development process.
+
+The author remains responsible for the scientific methods implemented by the 
+software and for the correctness and interpretation of the outputs.
