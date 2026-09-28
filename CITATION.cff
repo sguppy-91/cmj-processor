@@ -1,0 +1,85 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata
+  in this file, together with the methodological references below.
+title: cmj-processor
+type: software
+authors:
+  - family-names: Guppy
+    given-names: Stuart N.
+repository-code: 'https://github.com/sguppy-91/cmj-processor'
+license: MIT
+date-released: '2026-09-25'
+references:
+  - type: article
+    title: >-
+      Comparing numerical methods to estimate vertical jump height
+      using a force platform
+    authors:
+      - family-names: Chiu
+        given-names: L. Z. F.
+      - family-names: Daehlin
+        given-names: T. E.
+    journal: 'Measurement in Physical Education and Exercise Science'
+    volume: '24'
+    issue: '1'
+    pages: '25-32'
+    year: '2020'
+  - type: article
+    title: >-
+      Understanding the key phases of the countermovement jump
+      force-time curve
+    authors:
+      - family-names: McMahon
+        given-names: J. J.
+      - family-names: Suchomel
+        given-names: T. J.
+      - family-names: Lake
+        given-names: J. P.
+      - family-names: Comfort
+        given-names: P.
+    journal: 'Strength & Conditioning Journal'
+    volume: '40'
+    issue: '4'
+    pages: '96-106'
+    year: '2018'
+  - type: article
+    title: >-
+      Development of a criterion method to determine peak mechanical
+      power output in a countermovement jump
+    authors:
+      - family-names: Owen
+        given-names: N. J.
+      - family-names: Watkins
+        given-names: J.
+      - family-names: Kilduff
+        given-names: L. P.
+      - family-names: Bevan
+        given-names: H. R.
+      - family-names: Bennett
+        given-names: M. A.
+    journal: 'Journal of Strength and Conditioning Research'
+    volume: '28'
+    issue: '6'
+    pages: '1552-1558'
+    year: '2014'
+  - type: article
+    title: 'The stability of the deadlift three repetition maximum'
+    authors:
+      - family-names: Guppy
+        given-names: Stuart N.
+      - family-names: Nagatani
+        given-names: T.
+      - family-names: Poon
+        given-names: W. C. K.
+      - family-names: Kendall
+        given-names: K. L.
+      - family-names: Lake
+        given-names: J. P.
+      - family-names: Haff
+        given-names: G. G.
+    journal: 'International Journal of Sports Science & Coaching'
+    volume: '19'
+    issue: '2'
+    pages: '812-821'
+    year: '2024'
