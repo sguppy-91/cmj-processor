@@ -11,7 +11,17 @@ from cmj.readers import HawkinReader, read_csv_any
 DATA = Path(__file__).parent / "data"
 FIXTURE = DATA / "hawkin_fixture.csv"
 
+# The fixture file is deliberately not committed (research ethics).
+# Fixture-dependent tests skip with an explanatory message when the file
+# is absent; place a copy in tests/data/ to run them.
+requires_fixture = pytest.mark.skipif(
+    not FIXTURE.exists(),
+    reason="reader fixture withheld for research ethics; "
+           "place a copy in tests/data/ to run",
+)
 
+
+@requires_fixture
 class TestFixture:
     def test_single_trial(self):
         trials = read_csv_any(FIXTURE)

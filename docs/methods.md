@@ -270,7 +270,9 @@ Three layers, each catching what the previous cannot:
    interior fidelity, quiet-standing SD reduction, and edge behaviour.
 3. **Reader fixtures** (`tests/data/`): a real multi-run PASCO excerpt
    (including ragged rows) and a Hawkin-layout fixture, so export-format
-   drift is caught by regression.
+   drift is caught by regression. The fixture files are withheld from
+   the repository for research ethics (participant data); these tests
+   skip with an explanatory message when the files are absent.
 
 ## Open items
 

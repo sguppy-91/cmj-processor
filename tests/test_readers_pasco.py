@@ -19,6 +19,24 @@ HAWKIN_FIXTURE = DATA / "hawkin_fixture.csv"
 
 EXPECTED_LENGTHS = {1: 121, 2: 125, 3: 121, 4: 121, 5: 121}
 
+# The fixture files are participant data and are deliberately not
+# committed (research ethics). Fixture-dependent tests skip with an
+# explanatory message when the files are absent; place copies in
+# tests/data/ to run them.
+
+
+def _needs(*fixtures):
+    missing = [p.name for p in fixtures if not p.exists()]
+    return pytest.mark.skipif(
+        bool(missing),
+        reason="reader fixture withheld for research ethics (missing: "
+               + ", ".join(missing) + "); place a copy in tests/data/ to run",
+    )
+
+
+fixture_pasco = _needs(FIXTURE)
+fixture_both = _needs(FIXTURE, HAWKIN_FIXTURE)
+
 
 def write_pasco_csv(path, header, rows):
     import csv
@@ -29,6 +47,7 @@ def write_pasco_csv(path, header, rows):
         w.writerows(rows)
 
 
+@fixture_pasco
 class TestFixture:
     def test_five_runs_read(self):
         trials = read_csv_any(FIXTURE)
@@ -59,14 +78,17 @@ class TestSniffAndDispatch:
         assert reader.sniff(cols)
         assert not reader.sniff(["Time (s)", "Combined (N)"])
 
+    @fixture_both
     def test_auto_dispatch(self):
         assert all(t.plate_type == "pasco" for t in read_csv_any(FIXTURE))
         assert all(t.plate_type == "hawkin" for t in read_csv_any(HAWKIN_FIXTURE))
 
+    @fixture_pasco
     def test_plate_type_override(self):
         trials = read_csv_any(FIXTURE, plate_type="pasco")
         assert len(trials) == 5
 
+    @fixture_pasco
     def test_unknown_override_rejected(self):
         with pytest.raises(UnknownFormatError, match="No reader for plate_type"):
             read_csv_any(FIXTURE, plate_type="kistler")
