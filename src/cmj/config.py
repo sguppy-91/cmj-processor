@@ -25,7 +25,7 @@ class FilterSpec:
     """
 
     order: int = 4
-    cutoff_hz: float = 65.0
+    cutoff_hz: float = 50.0
     edge_mode: EdgeMode = "pad"
 
 
@@ -48,9 +48,10 @@ class CMJConfig:
             # Verbatim port of CMJ_Analysis_Script.py: raw force, BW +/- 5 SD
             # onset with a fixed 100 ms backtrack, flight-phase-refined take-off.
             "HD-raw": cls(),
-            # 2024 IJSSC manuscript methods: 65 Hz fourth-order zero-lag
-            # Butterworth, backward search to the last BW instance, 20 N take-off.
-            "IJSSC2024": cls(
+            # Backward-search methods: 50 Hz fourth-order zero-lag
+            # Butterworth (Harry et al., 2022), backward search to the
+            # last BW instance (Street et al., 2001), 20 N take-off.
+            "bw_search": cls(
                 filter_spec=FilterSpec(),
                 onset_method="search_last_bw",
                 takeoff_method="fixed_n",

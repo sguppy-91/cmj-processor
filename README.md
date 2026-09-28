@@ -51,6 +51,10 @@ The full methodological write-up, mapped one-to-one onto the code, is in
   to estimate vertical jump height using a force platform.
   *Measurement in Physical Education and Exercise Science*, *24*(1),
   25–32.
+- Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowsk, J., & Chowning,
+  L. (2022). Low-pass filter effects on metrics of countermovement
+  vertical jump performance. *Journal of Strength and Conditioning
+  Research*, *36*(5), 1459–1467.
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, *40*(4), 96–106.

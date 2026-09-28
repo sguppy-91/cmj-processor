@@ -3,7 +3,7 @@
 Initial onset at the first sample beyond BW +/- SD multiplier (Owen et al.,
 2014), then either a fixed backtrack (chosen to avoid noise-driven
 misidentification during the weighing period) or a backward search to the
-last BW instance (2024 IJSSC manuscript method).
+last BW instance (Street et al., 2001 method).
 """
 from __future__ import annotations
 

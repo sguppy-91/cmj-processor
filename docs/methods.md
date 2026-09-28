@@ -5,7 +5,7 @@ maps each decision to the code that implements it, and states why the
 decision was made. It is written so a future student or colleague can
 understand and audit the analysis without access to the original author,
 and so a published methods section can be reproduced exactly by loading a
-named config preset (`HD-raw`, `IJSSC2024`).
+named config preset (`HD-raw`, `bw_search`).
 
 Where a decision is still unresolved, this document says so explicitly
 rather than papering over it.
@@ -95,7 +95,7 @@ auditable in a way a heuristic is not.
 ## 3. Filtering (`processing/filtering.py`)
 
 An optional zero-lag (filtfilt) low-pass Butterworth filter, default
-fourth-order at 65 Hz.
+fourth-order at 50 Hz (Harry et al., 2022).
 
 **Position in the pipeline is fixed and load-bearing**: when filtering is
 enabled, the signal is filtered once, and BW and SD are computed from
@@ -107,14 +107,14 @@ is moot and the pipeline is the verbatim port of the reference script.
 
 Two measured consequences, encoded in `tests/test_filtering.py`:
 
-- **Noise attenuation is real but partial**: a fourth-order 65 Hz filter
-  at 1 kHz leaves ~34% of white-noise amplitude (the sub-cutoff power
+- **Noise attenuation is real but partial**: a fourth-order 50 Hz filter
+  at 1 kHz leaves ~33% of white-noise amplitude (the sub-cutoff power
   fraction). Filtering reduces the onset SD; it does not sanitise noise.
 - **Edge distortion exists and decays**: filtfilt's edge handling is an
   explicit config choice (`FilterSpec.edge_mode`: `'pad'` odd extension,
   default, or `'mirror'` even extension). On a trace that is not steady
   at the file edge, distortion reached ~6 N on the first samples and
-  decayed to the noise floor within 50 ms. This matters because onset
+  decayed to the noise floor within ~60 ms. This matters because onset
   detection and the refined take-off threshold both operate near edges.
 
 Per-platform defaults: HD plates are quiet enough that the reference
@@ -240,17 +240,17 @@ It is not yet implemented.
 Every constant lives in one frozen dataclass; `docs` map one-to-one onto
 code. Named presets reproduce a methods section by name:
 
-| Parameter | `HD-raw` (reference script) | `IJSSC2024` (manuscript) |
+| Parameter | `HD-raw` (reference script) | `bw_search` (backward search) |
 |---|---|---|
 | gravity | 9.81 | 9.81 |
 | sd_multiplier | 5 | 5 |
 | weighing_duration_s | 1.0 | 1.0 |
 | onset_method | `backtrack_ms` (100 ms) | `search_last_bw` |
-| filter_spec | none (raw force) | 4th-order, 65 Hz, zero-lag |
+| filter_spec | none (raw force) | 4th-order, 50 Hz, zero-lag (Harry et al., 2022) |
 | takeoff_method | `refined` (flight middle-50% + 5 SD) | `fixed_n` (20 N) |
 | takeoff_coarse_n | 10 | 10 |
 
-**Caveat**: loading `IJSSC2024` today raises `NotImplementedError` at
+**Caveat**: loading `bw_search` today raises `NotImplementedError` at
 onset until `search_last_bw` is implemented (section 4). Filtering and
 the fixed 20 N take-off are implemented and tested.
 
@@ -277,15 +277,15 @@ Three layers, each catching what the previous cannot:
 Decisions the code currently defers, stated here so they are not
 rediscovered the hard way:
 
-1. `search_last_bw` onset — implement against the manuscript, then
-   unpick the `IJSSC2024` preset.
+1. `search_last_bw` onset — implement against Street et al. (2001), then
+   unpick the `bw_search` preset.
 2. Manuscript metric terminology and the three per-sub-phase mean forces
    — next export schema bump.
 3. Trial averaging and the inclusion/exclusion rule for adjusted and
    discarded trials — analysis level, not pipeline.
-4. Filtered preset for PASCO data — the 65 Hz cutoff was chosen by
-   residual analysis on Hawkin hardware; PASCO noise characteristics
-   differ and should be re-derived, not assumed.
+4. Filtered preset for PASCO data — the 50 Hz cutoff follows Harry et
+   al. (2022) on Hawkin hardware; PASCO noise characteristics differ
+   and should be re-derived, not assumed.
 5. No batch/CLI replay mode yet (per-session decision to defer).
 
 ## References
@@ -294,6 +294,10 @@ rediscovered the hard way:
   to estimate vertical jump height using a force platform.
   *Measurement in Physical Education and Exercise Science*, 24(1),
   25–32.
+- Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowsk, J., & Chowning,
+  L. (2022). Low-pass filter effects on metrics of countermovement
+  vertical jump performance. *Journal of Strength and Conditioning
+  Research*, 36(5), 1459–1467.
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, 40(4), 96–106.

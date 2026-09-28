@@ -27,6 +27,26 @@ references:
     year: '2020'
   - type: article
     title: >-
+      Low-pass filter effects on metrics of countermovement vertical
+      jump performance
+    authors:
+      - family-names: Harry
+        given-names: J. R.
+      - family-names: Blinch
+        given-names: J.
+      - family-names: Barker
+        given-names: L. A.
+      - family-names: Krzyszkowsk
+        given-names: J.
+      - family-names: Chowning
+        given-names: L.
+    journal: 'Journal of Strength and Conditioning Research'
+    volume: '36'
+    issue: '5'
+    pages: '1459-1467'
+    year: '2022'
+  - type: article
+    title: >-
       Understanding the key phases of the countermovement jump
       force-time curve
     authors:

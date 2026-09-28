@@ -13,7 +13,7 @@ from cmj.config import FilterSpec
 from cmj.processing.filtering import lowpass
 
 FS = 1000.0
-SPEC = FilterSpec(order=4, cutoff_hz=65.0)
+SPEC = FilterSpec(order=4, cutoff_hz=50.0)
 
 
 def test_length_and_finiteness_preserved():
@@ -34,7 +34,7 @@ def test_constant_signal_unchanged():
 def test_low_frequency_interior_fidelity_with_noise():
     """A 10 Hz signal buried in broadband noise must be recovered in the
     interior (edge padding excluded) with strong noise attenuation. A
-    fourth-order 65 Hz filter passes ~sqrt(65/500) of white-noise power
+    fourth-order 50 Hz filter passes ~sqrt(50/500) of white-noise power
     at fs = 1000, so the filtered RMSE must drop well below half the
     raw RMSE."""
     rng = np.random.default_rng(7)
