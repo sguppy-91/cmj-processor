@@ -45,7 +45,8 @@ anywhere - the Desktop is a good spot).
 The full methodological write-up, mapped one-to-one onto the code, is in
 [docs/methods.md](docs/methods.md).
 
-## References
+## Methodological Basis and References
+The analytical procedures implemented in this software were informed by the following methodological literature:
 
 - Chiu, L. Z. F., & Daehlin, T. E. (2020). Comparing numerical methods
   to estimate vertical jump height using a force platform.
@@ -74,7 +75,7 @@ Investigator Grant.
 
 ## Development
 This software was developed with assistance from AI coding tools, including
-the GLM-5.3 (Z.ai, China; hosted by Mistral AI) large language model and the 
+the GLM-5.3 large language model (Z.ai, China; hosted by Mistral AI, France) and the 
 Mistral Vibe CLI coding agent (version 2.25.8).
 
 AI assistance was used for software design discussion, code generation and 
