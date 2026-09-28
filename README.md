@@ -45,6 +45,24 @@ anywhere - the Desktop is a good spot).
 The full methodological write-up, mapped one-to-one onto the code, is in
 [docs/methods.md](docs/methods.md).
 
+## References
+
+- Chiu, L. Z. F., & Daehlin, T. E. (2020). Comparing numerical methods
+  to estimate vertical jump height using a force platform.
+  *Measurement in Physical Education and Exercise Science*, *24*(1),
+  25–32.
+- McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
+  Understanding the key phases of the countermovement jump force-time
+  curve. *Strength & Conditioning Journal*, *40*(4), 96–106.
+- Owen, N. J., Watkins, J., Kilduff, L. P., Bevan, H. R., & Bennett,
+  M. A. (2014). Development of a criterion method to determine peak
+  mechanical power output in a countermovement jump. *Journal of
+  Strength and Conditioning Research*, *28*(6), 1552–1558.
+- Guppy, S. N., Nagatani, T., Poon, W. C. K., Kendall, K. L., Lake, J. P.,
+  & Haff, G. G. (2024). The stability of the deadlift three repetition
+  maximum. *International Journal of Sports Science & Coaching*, *19*(2),
+  812–821.
+
 ## Acknowledgments
 
 The development of this software was supported by an NSCA Young
