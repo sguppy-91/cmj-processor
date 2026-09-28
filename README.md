@@ -69,7 +69,7 @@ The full methodological write-up, mapped one-to-one onto the code, is in
 
 ## Acknowledgments
 
-The development of this software was supported by an NSCA Young
+The development of this software was supported by a NSCA Foundation Young
 Investigator Grant.
 
 ## Development
