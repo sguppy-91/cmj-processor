@@ -45,6 +45,11 @@ anywhere - the Desktop is a good spot).
 The full methodological write-up, mapped one-to-one onto the code, is in
 [docs/methods.md](docs/methods.md).
 
+## Acknowledgments
+
+The development of this software was supported by an NSCA Young
+Investigator Grant.
+
 ## Development
 This software was developed with assistance from AI coding tools, including
 the GLM-5.3 (Z.ai, China; hosted by Mistral AI) large language model and the 
