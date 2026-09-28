@@ -64,22 +64,21 @@ references:
     pages: '1552-1558'
     year: '2014'
   - type: article
-    title: 'The stability of the deadlift three repetition maximum'
+    title: >-
+      Sources of error in determining countermovement jump height
+      with the impulse method
     authors:
-      - family-names: Guppy
-        given-names: Stuart N.
-      - family-names: Nagatani
-        given-names: T.
-      - family-names: Poon
-        given-names: W. C. K.
-      - family-names: Kendall
-        given-names: K. L.
-      - family-names: Lake
-        given-names: J. P.
-      - family-names: Haff
-        given-names: G. G.
-    journal: 'International Journal of Sports Science & Coaching'
-    volume: '19'
-    issue: '2'
-    pages: '812-821'
-    year: '2024'
+      - family-names: Street
+        given-names: G.
+      - family-names: McMillan
+        given-names: S.
+      - family-names: Board
+        given-names: W.
+      - family-names: Rasmussen
+        given-names: M.
+    journal: 'Journal of Applied Biomechanics'
+    volume: '17'
+    issue: '1'
+    pages: '43-54'
+    year: '2001'
+    doi: 10.1123/jab.17.1.43

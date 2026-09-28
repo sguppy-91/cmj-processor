@@ -58,10 +58,10 @@ The full methodological write-up, mapped one-to-one onto the code, is in
   M. A. (2014). Development of a criterion method to determine peak
   mechanical power output in a countermovement jump. *Journal of
   Strength and Conditioning Research*, *28*(6), 1552–1558.
-- Guppy, S. N., Nagatani, T., Poon, W. C. K., Kendall, K. L., Lake, J. P.,
-  & Haff, G. G. (2024). The stability of the deadlift three repetition
-  maximum. *International Journal of Sports Science & Coaching*, *19*(2),
-  812–821.
+- Street, G., McMillan, S., Board, W., & Rasmussen, M. (2001). Sources of
+  error in determining countermovement jump height with the impulse
+  method. *Journal of Applied Biomechanics*, *17*(1), 43–54.
+  https://doi.org/10.1123/jab.17.1.43
 
 ## Acknowledgments
 

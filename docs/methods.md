@@ -95,8 +95,7 @@ auditable in a way a heuristic is not.
 ## 3. Filtering (`processing/filtering.py`)
 
 An optional zero-lag (filtfilt) low-pass Butterworth filter, default
-fourth-order at 65 Hz — the cutoff chosen by residual analysis in the
-2024 IJSSC manuscript.
+fourth-order at 65 Hz.
 
 **Position in the pipeline is fixed and load-bearing**: when filtering is
 enabled, the signal is filtered once, and BW and SD are computed from
@@ -138,10 +137,10 @@ True onset is then refined by one of two methods (config:
   `onset_backtrack_s` (100 ms) from the initial onset. Chosen over a
   backward search because noise during the weighing period makes
   "last BW crossing" misidentification-prone.
-- **`search_last_bw`** (2024 IJSSC manuscript): backward search from the
+- **`search_last_bw`** (Street et al., 2001): backward search from the
   BW ± 5 SD point to the last BW instance. **Not yet implemented** — the
-  semantics need pinning against the manuscript before shipping; the
-  pipeline raises `NotImplementedError` rather than guessing.
+  semantics need pinning against Street et al. (2001) before shipping;
+  the pipeline raises `NotImplementedError` rather than guessing.
 
 Whichever is used is recorded per trial in the output
 (`onset_method` column), which also enables a sensitivity comparison of
@@ -302,6 +301,7 @@ rediscovered the hard way:
   M. A. (2014). Development of a criterion method to determine peak
   mechanical power output in a countermovement jump. *Journal of
   Strength and Conditioning Research*, 28(6), 1552–1558.
-- Guppy, S. N., Nagatani, T., Poon, W. C. K., Kendall, K. L., Lake, J. P.,
-  & Haff, G. G. (2024). The stability of the deadlift three repetition maximum.
-  *International Journal of Sports Science & Coaching*, 19(2), 812-821. 
+- Street, G., McMillan, S., Board, W., & Rasmussen, M. (2001). Sources of
+  error in determining countermovement jump height with the impulse
+  method. *Journal of Applied Biomechanics*, 17(1), 43–54.
+  https://doi.org/10.1123/jab.17.1.43
