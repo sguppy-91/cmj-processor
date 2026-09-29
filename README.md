@@ -52,7 +52,7 @@ The analytical procedures implemented in this software were informed by the foll
   to estimate vertical jump height using a force platform.
   *Measurement in Physical Education and Exercise Science*, *24*(1),
   25–32.
-- Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowsk, J., & Chowning,
+- Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowski, J., & Chowning,
   L. (2022). Low-pass filter effects on metrics of countermovement
   vertical jump performance. *Journal of Strength and Conditioning
   Research*, *36*(5), 1459–1467.
@@ -63,10 +63,9 @@ The analytical procedures implemented in this software were informed by the foll
   M. A. (2014). Development of a criterion method to determine peak
   mechanical power output in a countermovement jump. *Journal of
   Strength and Conditioning Research*, *28*(6), 1552–1558.
-- Street, G., McMillan, S., Board, W., & Rasmussen, M. (2001). Sources of
+- Street, G., McMillan, S., Board, W., Rasmussen, M., & Heneghan, J. M. (2001). Sources of
   error in determining countermovement jump height with the impulse
   method. *Journal of Applied Biomechanics*, *17*(1), 43–54.
-  https://doi.org/10.1123/jab.17.1.43
 
 ## Acknowledgments
 
