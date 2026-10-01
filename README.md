@@ -73,9 +73,7 @@ The development of this software was supported by a NSCA Foundation Young
 Investigator Grant.
 
 ## Development
-This software was developed with assistance from AI coding tools, including
-the GLM-5.3 large language model (Z.ai, China; hosted by Mistral AI, France) and the 
-Mistral Vibe CLI coding agent (version 2.25.8).
+This software was developed with assistance from the GLM 5.3 large language model (Z.ai, China; hosted by Mistral AI, France)
 
 AI assistance was used for software design discussion, code generation and 
 refactoring, test development, documentation, and debugging. The analytical 
