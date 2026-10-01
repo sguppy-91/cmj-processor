@@ -193,10 +193,17 @@ def review_result(
     plt = _pyplot()
     overrides: dict[str, int] = {}
 
+    # The pipeline result is independent of overrides (they only replace
+    # boundaries and recompute metrics), so run it once and re-apply the
+    # cheap override step on each pass through the review loop instead of
+    # re-filtering and re-integrating the whole trial every iteration.
+    base_result = run_pipeline(trial, config, weighing_start_s, config_preset)
     while True:
-        result = run_pipeline(trial, config, weighing_start_s, config_preset)
-        if overrides:
-            result = apply_boundary_overrides(result, overrides, config)
+        result = (
+            apply_boundary_overrides(base_result, overrides, config)
+            if overrides
+            else base_result
+        )
 
         display_title = title
         if title and overrides:
