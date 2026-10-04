@@ -6,6 +6,16 @@ threshold). The refined method then sets the threshold from the middle
 after braking ends; the fixed method uses a static force threshold
 (2024 IJSSC manuscript: 20 N). Fallbacks are recorded as warnings, not
 silent behaviour.
+
+The landing that closes the flight window is confirmed by two guards
+against plate ring-down in the first milliseconds of flight, where a
+1-2 sample transient above the coarse threshold is common: the search
+waits landing_search_min_s into flight (the reference Excel workbook
+searches from take-off row + 250 samples), and a candidate must then
+stay above the threshold for landing_confirm_s. A confirmed landing
+also guarantees the middle-50% window spans real flight samples, so
+flight statistics are never computed from a transient or an empty
+window.
 """
 from __future__ import annotations
 
@@ -31,10 +41,39 @@ def coarse_takeoff(fz_onset: np.ndarray, config: CMJConfig) -> int:
     return idx
 
 
+def find_landing(
+    fz_onset: np.ndarray,
+    coarse_idx: int,
+    fs: float,
+    config: CMJConfig,
+) -> int | None:
+    """Index where the landing begins, or None if none is confirmed.
+
+    The search starts landing_search_min_s into flight; the landing is
+    the first sample at or after that point whose force stays above the
+    coarse threshold for landing_confirm_s consecutive samples. A run
+    that reaches the end of the recording counts (a file truncated
+    mid-landing still confirms).
+    """
+    start = coarse_idx + int(round(config.landing_search_min_s * fs))
+    if start >= fz_onset.size:
+        return None
+    n_confirm = max(1, int(round(config.landing_confirm_s * fs)))
+    above = (fz_onset[start:] > config.takeoff_coarse_n).astype(int)
+    edges = np.diff(np.concatenate(([0], above, [0])))
+    run_starts = np.flatnonzero(edges == 1)
+    run_ends = np.flatnonzero(edges == -1)
+    sustained = (run_ends - run_starts) >= n_confirm
+    if run_starts.size == 0 or not sustained.any():
+        return None
+    return start + int(run_starts[sustained][0])
+
+
 def detect_takeoff(
     fz_onset: np.ndarray,
     braking_end: int,
     coarse_idx: int,
+    fs: float,
     config: CMJConfig,
     warnings: list[str],
 ) -> TakeoffInfo:
@@ -62,11 +101,13 @@ def detect_takeoff(
             threshold_n=float(config.takeoff_fixed_n),
         )
 
-    land_hits = np.flatnonzero(fz_onset[coarse_idx:] > config.takeoff_coarse_n)
-    if land_hits.size == 0:
+    coarse_land_idx = find_landing(fz_onset, coarse_idx, fs, config)
+    if coarse_land_idx is None:
         warnings.append(
-            "No landing detected (force never returned above "
-            f"{config.takeoff_coarse_n:g} N). Using coarse take-off."
+            "No landing detected (force never stayed above "
+            f"{config.takeoff_coarse_n:g} N for {config.landing_confirm_s:g} s "
+            f"after {config.landing_search_min_s:g} s of flight). Using coarse "
+            "take-off."
         )
         return TakeoffInfo(
             idx=coarse_idx,
@@ -76,8 +117,6 @@ def detect_takeoff(
             flight_sd_n=float("nan"),
             threshold_n=float("nan"),
         )
-
-    coarse_land_idx = coarse_idx + int(land_hits[0])
 
     # Middle 50% of the flight phase
     flight_len = coarse_land_idx - coarse_idx

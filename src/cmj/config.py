@@ -41,6 +41,14 @@ class CMJConfig:
     takeoff_method: TakeoffMethod = "refined"
     takeoff_coarse_n: float = 10.0
     takeoff_fixed_n: float = 20.0
+    # Landing confirmation. Plate ring-down after take-off can cross the
+    # coarse threshold for 1-2 samples; a real landing holds. The
+    # landing search is delayed landing_search_min_s into flight (the
+    # reference Excel workbook searches from take-off row + 250
+    # samples), and a candidate must then stay above the coarse
+    # threshold for landing_confirm_s.
+    landing_search_min_s: float = 0.25
+    landing_confirm_s: float = 0.05
 
     @classmethod
     def preset(cls, name: str) -> "CMJConfig":

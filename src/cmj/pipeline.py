@@ -44,7 +44,9 @@ def run_pipeline(
 
     coarse_idx = takeoff.coarse_takeoff(kin.fz, config)
     boundaries = phases.find_phase_boundaries(kin.velocity, coarse_idx)
-    to = takeoff.detect_takeoff(kin.fz, boundaries["braking_end"], coarse_idx, config, warnings)
+    to = takeoff.detect_takeoff(
+        kin.fz, boundaries["braking_end"], coarse_idx, trial.fs, config, warnings
+    )
     m = metrics.compute_metrics(kin, boundaries, to, weigh, config)
 
     return AnalysisResult(

@@ -212,12 +212,28 @@ Two-stage detection, because a fixed threshold is exactly where plate
 noise and drift bite:
 
 1. **Coarse take-off** brackets the flight phase: the first sample below
-   `takeoff_coarse_n` (10 N). This threshold is also used to find the
-   landing (first sample above it after flight).
+   `takeoff_coarse_n` (10 N).
 2. **Refined take-off** (default): from the middle 50% of the bracketed
    flight, mean + `sd_multiplier` × SD gives a data-driven threshold;
    take-off is the first sample below it after braking ends. This adapts
    to per-recording noise instead of assuming a fixed force level.
+
+The landing that closes the flight window is **confirmed by two guards**
+against plate ring-down in the first milliseconds after take-off, where
+a 1–2 sample transient above 10 N is common and previously ended the
+flight window early — silently corrupting the flight statistics and the
+refined threshold:
+
+- the search does not begin until `landing_search_min_s` (0.25 s) of
+  flight has elapsed — the reference Excel workbook's own bound (its
+  Actual Landing is searched from take-off row + 250 samples);
+- a candidate must then stay above `takeoff_coarse_n` for
+  `landing_confirm_s` (0.05 s) — a real landing ramps to 1.5–2.5 × body
+  weight and holds; a transient does not.
+
+A confirmed landing also guarantees the middle-50% window spans real
+flight (≥ ~125 samples at 1 kHz), so flight statistics are never
+computed from a transient or an empty window.
 
 Fallbacks are deliberate and logged as warnings on the result and the
 verification figure — never silent:
@@ -298,6 +314,8 @@ code. Named presets reproduce a methods section by name:
 | filter_spec | none (raw force) | 4th-order, 50 Hz, zero-lag (Harry et al., 2022) |
 | takeoff_method | `refined` (flight middle-50% + 5 SD) | `fixed_n` (20 N) |
 | takeoff_coarse_n | 10 | 10 |
+| landing_search_min_s | 0.25 | 0.25 |
+| landing_confirm_s | 0.05 | 0.05 |
 
 **Caveat**: loading `bw_search` today raises `NotImplementedError` at
 onset until `search_last_bw` is implemented (section 4). Filtering and
