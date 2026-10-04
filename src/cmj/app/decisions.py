@@ -28,12 +28,16 @@ class Decision:
     """The analyst's decision for one trial.
 
     weighing_start_s is the raw click time, never a derived onset value:
-    log the decision, derive everything else at run time.
+    log the decision, derive everything else at run time. onset_s is the
+    raw manual-onset click time, set only when the analyst placed the
+    onset by hand after detection raised OnsetError; None means the
+    onset was detected.
     """
 
     weighing_start_s: float
     action: Action
     boundary_overrides: dict[str, int] = field(default_factory=dict)
+    onset_s: float | None = None
 
 
 def apply_decision(
@@ -48,7 +52,13 @@ def apply_decision(
     """
     if decision.action == "discard":
         return None
-    result = run_pipeline(trial, config, decision.weighing_start_s, config_preset)
+    result = run_pipeline(
+        trial,
+        config,
+        decision.weighing_start_s,
+        config_preset,
+        onset_s=decision.onset_s,
+    )
     if decision.boundary_overrides:
         result = apply_boundary_overrides(result, decision.boundary_overrides, config)
     return result
@@ -110,8 +120,11 @@ def decision_from_row(row: Mapping[str, object]) -> Decision:
     action: Action = "adjust" if str(row.get("adjusted", "")) in ("True", "true", "1") else "accept"
     overrides_raw = str(row.get("boundary_overrides", "") or "")
     overrides = {k: int(v) for k, v in json.loads(overrides_raw).items()} if overrides_raw else {}
+    onset_raw = str(row.get("onset_start_s", "") or "").strip()
+    onset_s = float(onset_raw) if onset_raw else None
     return Decision(
         weighing_start_s=float(row["weighing_start_s"]),
         action=action,
         boundary_overrides=overrides,
+        onset_s=onset_s,
     )

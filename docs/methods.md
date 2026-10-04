@@ -124,11 +124,53 @@ Open items).
 
 ## 4. Movement onset (`processing/onset.py`)
 
-Initial onset: the first sample after the weighing window beyond
-BW ± `sd_multiplier` × SD (Owen et al., 2014). The direction of departure
-is recorded (`rising` / `declining`) because a countermovement normally
-leaves BW downward first — a `rising` onset flags an unusual trace worth
-inspecting (one of the five runs in the PASCO validation file did this).
+The BW ± 5 SD search is bounded by the shape of the force-time curve
+itself (the reference Excel workbook's method), so the propulsion phase
+and the landing spike can never be mistaken for onset:
+
+1. **Coarse take-off** brackets the jump: the first sample below
+   `takeoff_coarse_n` (10 N) after the weighing window.
+2. The **peak force** between the end of the weighing window and the
+   coarse take-off bounds the jump (it falls in the propulsion phase).
+3. The **minimum force** between the weighing window and the peak
+   bounds the BW ± `sd_multiplier` × SD search window.
+
+Within [weighing end, dip minimum], the initial onset is the first
+sample beyond the threshold (Owen et al., 2014). The direction of
+departure is recorded (`rising` / `declining`): a countermovement
+normally leaves BW downward first, but a **pre-movement rise** — the
+athlete shifting weight before the countermovement — is a legitimate
+`rising` onset found inside the bounded window, which is why the
+threshold is BW ± 5 SD and not BW − 5 SD alone. A countermovement too
+gradual to cross either threshold inside the window raises `OnsetError`
+(loud, analyst-visible) instead of latching onto the later propulsion
+rise — the failure mode of an unbounded search.
+
+Parity with the reference Excel workbook (NSCAF_CMJ_Analysissheet,
+Analysis sheet): coarse take-off = Take-off Row (`L39`, MATCH of 10 N),
+peak = Peak Force Row (`L25`), dip minimum = Unloading End Row (`L21`),
+and the threshold selection in Unloading Start Fz (`L15`: BW + 5 SD when
+Baseline Max `L6` exceeds it, else BW − 5 SD). The declining search runs
+weighing-end → dip minimum and the rising search weighing-end →
+Baseline Max Row (`L7`); the port searches rising out to the dip
+minimum, which is provably identical for a first crossing (any BW + 5 SD
+crossing lies at or before the window maximum). Two deliberate
+deviations: the port takes the first sample beyond the threshold where
+Excel's approximate MATCH returns the last sample inside it (±1
+sample, and consistent with the reference Python script), and a
+threshold never crossed raises `OnsetError` where Excel's MATCH
+silently falls back to the sample nearest the dip minimum. Confirmed
+decision: the error stays — a gradual countermovement is an analyst
+decision (re-weigh or manual adjustment), never a silent fallback.
+
+**Manual onset placement.** When detection raises `OnsetError`, the
+inspector offers three paths: place the onset manually (click-to-place,
+same interaction as the weighing window), re-weigh, or discard. A manual
+onset is logged as the raw click time (`onset_start_s`, schema v2),
+recorded with `onset_method = "manual"`, and marked with a warning on
+the result and the verification figure; a replayed decision reproduces
+the trial exactly. A manual onset does not survive a re-weigh — new BW
+and SD thresholds make the placement stale, so re-weighing clears it.
 
 True onset is then refined by one of two methods (config:
 `onset_method`):
@@ -200,7 +242,7 @@ per trial.
 
 Metric keys currently use the reference script's terminology. Renaming
 to the manuscript's terms (eccentric yielding / eccentric braking /
-concentric mean forces, per-sub-phase) is planned with the next export
+concentric mean forces, per-sub-phase) is planned with a later export
 schema bump; the manuscript additionally reports time-to-take-off and
 mean force across all three sub-phases, which the current metrics module
 does not yet export. See Open items.
@@ -213,21 +255,28 @@ velocity, and displacement, with any fallback warnings rendered on the
 figure.
 
 - **Accept** — log and write.
-- **Adjust** — either re-open the weighing-window selection or move a
+- **Adjust** — re-open the weighing-window selection, place the onset
+  manually (only offered when onset detection failed), or move a
   boundary (unweighting end, braking end, take-off) by clicking at its
   new time; affected metrics recompute and the trial is written with
-  `adjusted = True` and the overrides in `boundary_overrides`.
+  `adjusted = True`, the manual onset time in `onset_start_s`, and any
+  overrides in `boundary_overrides`.
 - **Discard** — nothing is written.
 
 Boundary overrides must respect phase ordering
 (0 ≤ unweighting end ≤ braking end ≤ take-off); violations are rejected.
 
 A row logs enough to replay the analysis exactly: the raw
-`weighing_start_s`, the `adjusted` flag, overrides as JSON, onset
-strategy and method, take-off method, config preset, plate type, source
-file, run number, and warnings, under `schema_version = 1`. A decision
-read back from the CSV and re-run reproduces the original metrics
-exactly (`tests/test_decisions.py`).
+`weighing_start_s`, the manual onset click time `onset_start_s` (empty
+when the onset was detected), the `adjusted` flag, overrides as JSON,
+onset strategy and method, take-off method, config preset, plate type,
+source file, run number, and warnings, under `schema_version = 2`. A
+decision read back from the CSV and re-run reproduces the original
+metrics exactly (`tests/test_decisions.py`,
+`tests/test_manual_onset.py`). `append_result` verifies an existing
+results file carries the schema v2 header before appending — a
+mismatched (e.g. v1) file raises `ExportError` instead of silently
+misaligning columns; rename or migrate such files before appending.
 
 Trial averaging (the manuscript averages five trials per session) is
 deliberately **outside** the per-trial pipeline; it belongs at the
@@ -282,7 +331,7 @@ rediscovered the hard way:
 1. `search_last_bw` onset — implement against Street et al. (2001), then
    unpick the `bw_search` preset.
 2. Manuscript metric terminology and the three per-sub-phase mean forces
-   — next export schema bump.
+   — a later export schema bump (v2 was taken by `onset_start_s`).
 3. Trial averaging and the inclusion/exclusion rule for adjusted and
    discarded trials — analysis level, not pipeline.
 4. Filtered preset for PASCO data — the 50 Hz cutoff follows Harry et

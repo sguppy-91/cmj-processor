@@ -1,5 +1,5 @@
-"""Interactive matplotlib windows: weighing-window selection and the
-accept/adjust/discard review gate.
+"""Interactive matplotlib windows: weighing-window selection, manual onset
+placement (when detection fails), and the accept/adjust/discard review gate.
 
 The widget code here is deliberately thin: every click is translated into
 a call on decisions.py or the pipeline, so the audit-trail behaviour is
@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..config import CMJConfig
-from ..errors import CMJError
+from ..errors import CMJError, OnsetError
 from ..model import AnalysisResult, Trial
 from ..pipeline import run_pipeline
 from ..plotting import verification_figure
@@ -146,6 +146,94 @@ def select_weighing_window(
     return state["start"]
 
 
+def select_onset_manually(
+    trial: Trial, message: str | None = None
+) -> float | None:
+    """Click to place the movement onset after detection failed. Returns
+    the raw click time, or None if cancelled. The click is clamped to the
+    recorded trace."""
+    plt = _pyplot()
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    ax.plot(trial.t, trial.fz, lw=0.8)
+    ax.set_title(
+        (message + "\n" if message else "")
+        + "Click at the movement onset (zoom/pan first if needed), then Accept"
+    )
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Force (N)")
+    ax.grid(True, alpha=0.3)
+
+    state: dict = {"start": None, "done": False}
+    artists: list = []
+
+    def redraw() -> None:
+        for a in artists:
+            a.remove()
+        artists.clear()
+        if state["start"] is not None:
+            artists.append(ax.axvline(state["start"], color="red", lw=1.5))
+
+    def on_click(event):
+        if event.inaxes is not ax or event.xdata is None or state["done"]:
+            return
+        if _toolbar_busy(fig):
+            return
+        x = float(event.xdata)
+        state["start"] = min(max(x, float(trial.t[0])), float(trial.t[-1]))
+        redraw()
+        fig.canvas.draw_idle()
+
+    def on_accept(_):
+        if state["start"] is None:
+            ax.set_title("Place the onset first: click on the trace, then Accept")
+            fig.canvas.draw_idle()
+            return
+        state["done"] = True
+        plt.close(fig)
+
+    def on_cancel(_):
+        state["start"] = None
+        state["done"] = True
+        plt.close(fig)
+
+    fig.canvas.mpl_connect("button_press_event", on_click)
+    _button(fig, "Accept", 0.71, 0.02, on_accept, color="palegreen")
+    _button(fig, "Cancel", 0.94, 0.02, on_cancel, color="lightcoral")
+
+    plt.show(block=True)
+    return state["start"]
+
+
+def _onset_failed_choice(trial: Trial, message: str) -> str:
+    """Gate shown when onset detection fails. Returns 'manual' | 'reweigh'
+    | 'discard'; closing the window discards, as at the review gate."""
+    plt = _pyplot()
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    ax.plot(trial.t, trial.fz, lw=0.8)
+    ax.set_title(f"Onset detection failed: {message}")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Force (N)")
+    ax.grid(True, alpha=0.3)
+
+    action: dict = {"value": None}
+
+    def finish(value):
+        def handler(_):
+            action["value"] = value
+            plt.close(fig)
+
+        return handler
+
+    _button(fig, "Manual onset", 0.68, 0.02, finish("manual"), color="lightskyblue")
+    _button(fig, "Re-weigh", 0.81, 0.02, finish("reweigh"), color="khaki")
+    _button(fig, "Discard", 0.94, 0.02, finish("discard"), color="lightcoral")
+    plt.show(block=True)
+
+    return action["value"] or "discard"
+
+
 def _pick_boundary(result: AnalysisResult) -> tuple[str, int] | None:
     """Blocking single-click picker: returns (boundary name, local index)
     for the boundary nearest the clicked time, or None if cancelled."""
@@ -183,12 +271,15 @@ def review_result(
     weighing_start_s: float,
     config_preset: str | None = None,
     title: str | None = None,
+    onset_s: float | None = None,
 ) -> tuple[str, dict[str, int]]:
     """Show the verification figure as an accept / adjust / discard gate.
 
     Returns ("accept" | "adjust" | "discard", overrides). "adjust" means
     boundary overrides were applied; re-weighing is requested by the
-    caller via the returned action "reweigh".
+    caller via the returned action "reweigh". onset_s is the analyst's
+    manual onset decision (None = detect), passed straight through to
+    the pipeline.
     """
     plt = _pyplot()
     overrides: dict[str, int] = {}
@@ -197,7 +288,9 @@ def review_result(
     # boundaries and recompute metrics), so run it once and re-apply the
     # cheap override step on each pass through the review loop instead of
     # re-filtering and re-integrating the whole trial every iteration.
-    base_result = run_pipeline(trial, config, weighing_start_s, config_preset)
+    base_result = run_pipeline(
+        trial, config, weighing_start_s, config_preset, onset_s=onset_s
+    )
     while True:
         result = (
             apply_boundary_overrides(base_result, overrides, config)
@@ -247,6 +340,11 @@ def inspect_trial(
 ) -> Decision | None:
     """Full interactive flow for one trial: weigh -> verify -> decide.
 
+    When onset detection fails, the analyst can place the onset manually
+    (click-to-place, logged as onset_s), re-weigh, or discard. A manual
+    onset does not survive a re-weigh: new BW/SD thresholds make the
+    placement stale, so re-weighing clears it.
+
     Returns a Decision (action may be "discard"), or None if the analyst
     cancelled the weighing-window selection.
     """
@@ -254,19 +352,41 @@ def inspect_trial(
         start = select_weighing_window(trial, config)
         if start is None:
             return None
-        try:
-            action, overrides = review_result(
-                trial, config, start, config_preset, title=title
-            )
-        except CMJError as e:
-            select_weighing_window(
-                trial, config, message=f"Analysis failed: {e}. Re-select the window."
-            )
-            continue
+        onset_s: float | None = None
+
+        while True:
+            try:
+                action, overrides = review_result(
+                    trial, config, start, config_preset, title=title, onset_s=onset_s
+                )
+                break
+            except OnsetError as e:
+                choice = _onset_failed_choice(trial, str(e))
+                if choice == "manual":
+                    clicked = select_onset_manually(trial, message=str(e))
+                    if clicked is None:
+                        continue  # back to the failure gate
+                    onset_s = clicked
+                    continue  # re-run the review gate with the manual onset
+                if choice == "reweigh":
+                    break  # outer loop re-selects the weighing window
+                return Decision(weighing_start_s=start, action="discard")
+            except CMJError as e:
+                # Non-onset failures (bad weighing window, no take-off,
+                # phases): re-select the weighing window, reusing the
+                # placement the analyst makes in the message window.
+                start = select_weighing_window(
+                    trial, config, message=f"Analysis failed: {e}. Re-select the window."
+                )
+                if start is None:
+                    return None
+                onset_s = None
+
         if action == "reweigh":
             continue
         return Decision(
             weighing_start_s=start,
             action=action,  # type: ignore[arg-type]
             boundary_overrides=overrides,
+            onset_s=onset_s,
         )

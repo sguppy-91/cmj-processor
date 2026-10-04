@@ -27,3 +27,7 @@ class PhaseError(CMJError):
 
 class TakeoffError(CMJError):
     """Take-off could not be detected from the force trace."""
+
+
+class ExportError(CMJError):
+    """Results could not be exported (e.g. schema/header mismatch)."""

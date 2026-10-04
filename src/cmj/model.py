@@ -44,8 +44,8 @@ class WeighingInfo:
 @dataclass(frozen=True)
 class OnsetInfo:
     idx: int  # absolute index into the trial arrays
-    strategy: str  # 'rising' | 'declining'
-    method: str  # onset method used (config.onset_method)
+    strategy: str  # 'rising' | 'declining' | 'manual'
+    method: str  # onset method used (config.onset_method, or 'manual')
     initial_idx: int  # first sample beyond BW +/- SD multiplier
     threshold_pos_n: float
     threshold_neg_n: float

@@ -1,9 +1,10 @@
 """Results export: one long/wide CSV row per analysed trial.
 
-Schema v1. The row logs the analyst's decision (raw weighing-window click
-time, adjusted flag, boundary overrides) alongside the metrics so any
-session can replay the exact analysis. Metric names follow the reference
-script for now; renaming to manuscript terminology is a schema bump.
+Schema v2. The row logs the analyst's decision (raw weighing-window click
+time, manual onset click time when placed, adjusted flag, boundary
+overrides) alongside the metrics so any session can replay the exact
+analysis. Metric names follow the reference script for now; renaming to
+manuscript terminology is a later schema bump.
 """
 from __future__ import annotations
 
@@ -13,9 +14,10 @@ from pathlib import Path
 import pandas as pd
 
 from .app.decisions import Decision
+from .errors import ExportError
 from .model import AnalysisResult
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 COLUMNS = [
     "schema_version",
@@ -27,6 +29,7 @@ COLUMNS = [
     "run",
     "config_preset",
     "weighing_start_s",
+    "onset_start_s",
     "adjusted",
     "boundary_overrides",
     "onset_strategy",
@@ -54,7 +57,11 @@ def result_row(
     """
     if decision.action == "discard":
         raise ValueError("Discarded trials are never written")
-    adjusted = decision.action == "adjust" or bool(decision.boundary_overrides)
+    adjusted = (
+        decision.action == "adjust"
+        or bool(decision.boundary_overrides)
+        or decision.onset_s is not None
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "participant": meta.get("participant", ""),
@@ -65,6 +72,9 @@ def result_row(
         "run": result.trial.meta.get("run", ""),
         "config_preset": result.config_preset or "",
         "weighing_start_s": round(decision.weighing_start_s, 6),
+        "onset_start_s": (
+            round(decision.onset_s, 6) if decision.onset_s is not None else ""
+        ),
         "adjusted": adjusted,
         "boundary_overrides": json.dumps(decision.boundary_overrides)
         if decision.boundary_overrides
@@ -82,13 +92,26 @@ def result_row(
 
 
 def append_result(results_path: str | Path, row: dict[str, object]) -> None:
-    """Append one row, writing the header only for a new/empty file."""
+    """Append one row, writing the header only for a new/empty file.
+
+    An existing non-empty file must carry this schema's header: appending
+    a v2 row to a mismatched (e.g. v1) results file would silently
+    misalign columns, so the header is verified and a mismatch raises
+    ExportError instead of corrupting the file.
+    """
     path = Path(results_path)
+    write_header = True
     if path.exists():
         with open(path, "r", encoding="utf-8-sig") as f:
             content = f.read().strip()
-        write_header = len(content) == 0
-    else:
-        write_header = True
+        if content:
+            header = content.splitlines()[0]
+            if header != ",".join(COLUMNS):
+                raise ExportError(
+                    f"{path.name}: results file header does not match "
+                    f"schema v{SCHEMA_VERSION}; rename or migrate the file "
+                    "before appending."
+                )
+            write_header = False
     df = pd.DataFrame([row], columns=COLUMNS)
     df.to_csv(path, mode="a", header=write_header, index=False)

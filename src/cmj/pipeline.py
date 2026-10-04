@@ -16,12 +16,17 @@ def run_pipeline(
     config: CMJConfig,
     weighing_start_s: float,
     config_preset: str | None = None,
+    onset_s: float | None = None,
 ) -> AnalysisResult:
     """Analyse one trial from a raw weighing-window decision.
 
     weighing_start_s must be the analyst's raw decision (the clicked
     weighing-window start time), never a derived onset value, so logged
     decisions replay honestly through a re-run.
+
+    onset_s, when given, is the analyst's raw manual-onset decision (the
+    clicked movement onset, used when detection raised OnsetError);
+    detection is skipped and a warning records the manual placement.
     """
     warnings: list[str] = []
 
@@ -30,7 +35,11 @@ def run_pipeline(
         fz = filtering.lowpass(fz, trial.fs, config.filter_spec)
 
     weigh = weighing.compute_weighing(trial.t, fz, weighing_start_s, config)
-    on = onset.detect_onset(trial.t, fz, weigh, config)
+    if onset_s is not None:
+        on = onset.manual_onset(trial.t, onset_s, weigh, config)
+        warnings.append("Movement onset placed manually by the analyst.")
+    else:
+        on = onset.detect_onset(trial.t, fz, weigh, config)
     kin = integration.integrate(trial.t, fz, on.idx, weigh)
 
     coarse_idx = takeoff.coarse_takeoff(kin.fz, config)
