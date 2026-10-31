@@ -5,7 +5,7 @@ maps each decision to the code that implements it, and states why the
 decision was made. It is written so a future student or colleague can
 understand and audit the analysis without access to the original author,
 and so a published methods section can be reproduced exactly by loading a
-named config preset (`HD-raw`, `bw_search`).
+named config preset (`raw`, `bw_search`).
 
 Where a decision is still unresolved, this document says so explicitly
 rather than papering over it.
@@ -102,7 +102,7 @@ enabled, the signal is filtered once, and BW and SD are computed from
 the *filtered* signal, so the BW ± SD threshold and the data it is
 applied to are consistent (`pipeline.py`). Filtering changes the
 quiet-standing SD (the onset threshold), so its position relative to the
-weighing window cannot be left implicit. Under `HD-raw` (no filter) this
+weighing window cannot be left implicit. Under `raw` (no filter) this
 is moot and the pipeline is the verbatim port of the reference script.
 
 Two measured consequences, encoded in `tests/test_filtering.py`:
@@ -118,7 +118,7 @@ Two measured consequences, encoded in `tests/test_filtering.py`:
   detection and the refined take-off threshold both operate near edges.
 
 Per-platform defaults: HD plates are quiet enough that the reference
-workflow used raw force (`HD-raw`); PASCO hardware is noisier, so a
+workflow used raw force (`raw`); PASCO hardware is noisier, so a
 filtered preset for PASCO data should be validated before use (see
 Open items).
 
@@ -305,7 +305,7 @@ It is not yet implemented.
 Every constant lives in one frozen dataclass; `docs` map one-to-one onto
 code. Named presets reproduce a methods section by name:
 
-| Parameter | `HD-raw` (reference script) | `bw_search` (backward search) |
+| Parameter | `raw` (reference script) | `bw_search` (backward search) |
 |---|---|---|
 | gravity | 9.81 | 9.81 |
 | sd_multiplier | 5 | 5 |

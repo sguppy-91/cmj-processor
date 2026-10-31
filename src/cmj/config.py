@@ -55,7 +55,7 @@ class CMJConfig:
         presets: dict[str, CMJConfig] = {
             # Verbatim port of CMJ_Analysis_Script.py: raw force, BW +/- 5 SD
             # onset with a fixed 100 ms backtrack, flight-phase-refined take-off.
-            "HD-raw": cls(),
+            "raw": cls(),
             # Backward-search methods: 50 Hz fourth-order zero-lag
             # Butterworth (Harry et al., 2022), backward search to the
             # last BW instance (Street et al., 2001), 20 N take-off.

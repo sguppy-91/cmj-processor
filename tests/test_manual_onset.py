@@ -105,7 +105,7 @@ class TestDecisionAndReplay:
         decision = Decision(
             weighing_start_s=WEIGHING_START_S, action="adjust", onset_s=ONSET_S
         )
-        result = apply_decision(decision, gradual_trial, config, config_preset="HD-raw")
+        result = apply_decision(decision, gradual_trial, config, config_preset="raw")
         assert result is not None
         assert result.onset.method == "manual"
 

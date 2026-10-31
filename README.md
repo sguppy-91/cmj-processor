@@ -26,7 +26,7 @@ Not yet wired to a GUI/CLI. Library use:
 from cmj import CMJConfig, read_csv_any, run_pipeline
 
 trial = read_csv_any("jump.csv")[0]
-result = run_pipeline(trial, CMJConfig.preset("HD-raw"), weighing_start_s=1.2)
+result = run_pipeline(trial, CMJConfig.preset("raw"), weighing_start_s=1.2)
 print(result.metrics)
 ```
 

@@ -13,7 +13,7 @@ META = {"participant": "P001", "session": "T1", "trial": "1"}
 @pytest.fixture
 def accept_row(synth_trial, synth_config):
     decision = Decision(weighing_start_s=WEIGHING_START_S, action="accept")
-    result = apply_decision(decision, synth_trial, synth_config, config_preset="HD-raw")
+    result = apply_decision(decision, synth_trial, synth_config, config_preset="raw")
     return result_row(result, decision, META)
 
 
@@ -22,7 +22,7 @@ def test_row_has_full_schema(accept_row):
     assert accept_row["schema_version"] == SCHEMA_VERSION
     assert accept_row["plate_type"] == "synthetic"
     assert accept_row["source_file"] == "synthetic_cmj.csv"
-    assert accept_row["config_preset"] == "HD-raw"
+    assert accept_row["config_preset"] == "raw"
 
 
 def test_append_writes_header_once(tmp_path, accept_row):

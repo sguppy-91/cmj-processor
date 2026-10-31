@@ -17,7 +17,7 @@ from ..readers import read_csv_any
 from .decisions import apply_decision
 from .inspector import inspect_trial
 
-PRESETS = ("HD-raw", "bw_search")
+PRESETS = ("raw", "bw_search")
 
 
 def _summary(row: dict[str, object]) -> str:

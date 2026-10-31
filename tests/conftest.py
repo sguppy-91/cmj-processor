@@ -43,4 +43,4 @@ def synth_config() -> CMJConfig:
 
 @pytest.fixture(scope="session")
 def synth_result(synth_trial, synth_config) -> object:
-    return run_pipeline(synth_trial, synth_config, WEIGHING_START_S, config_preset="HD-raw")
+    return run_pipeline(synth_trial, synth_config, WEIGHING_START_S, config_preset="raw")
