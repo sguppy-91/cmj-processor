@@ -306,7 +306,11 @@ A row logs enough to replay the analysis exactly: the raw
 `weighing_start_s`, the manual onset click time `onset_start_s` (empty
 when the onset was detected), the `adjusted` flag, overrides as JSON,
 onset strategy and method, take-off method, config preset, plate type,
-source file, run number, and warnings, under `schema_version = 2`. A
+source file, run number, and warnings, under `schema_version = 2`.
+When the GUI combines a named preset with a non-default phase method,
+the logged `config_preset` is `preset/phase_method` (e.g.
+`raw/harry`), so the taxonomy that produced the boundaries is
+identifiable from the log. A
 decision read back from the CSV and re-run reproduces the original
 metrics exactly (`tests/test_decisions.py`,
 `tests/test_manual_onset.py`). `append_result` verifies an existing
