@@ -69,7 +69,7 @@ The analytical procedures implemented in this software were informed by the foll
 - Lake, J., Mundy, P., Comfort, P., McMahon, J. J., Suchomel, T. J., &
   Carden, P. (2018). Concurrent validity of a portable force plate
   using vertical jump force-time characteristics. *Journal of Applied
-  Biomechanics*, *34*(5), 410–413. https://doi.org/10.1123/jab.2017-0371
+  Biomechanics*, *34*(5), 410–413.
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, *40*(4), 96–106.
