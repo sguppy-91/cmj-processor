@@ -53,22 +53,17 @@ One trial per file. The analysis uses `Time (s)` and `Combined (N)`;
 `Left (N)` and `Right (N)` are present in exports but not used. Extra
 columns and UTF-8 BOMs are tolerated.
 
-### PASCO Capstone/SPARK (`readers/pasco.py`)
+### PASCO Capstone (`readers/pasco.py`)
 
-One file can contain several runs side by side, each with its own column
+When exporting from PASCO Capstone, one file can contain several runs side by side, each with its own column
 group suffixed `Run #N`, ending at different times (ragged rows). The
 reader produces one `Trial` per run from the run's `Time (s)` and
 `Fz (N)` columns, pairs them row-wise, drops rows where either is empty,
 and records the run number in `Trial.meta["run"]`.
 
-**PASCO's own calculated columns (weight, hangtime, mass, Jump Height)
+**Columns calculated within PASCO Capstone (weight, hangtime, mass, Jump Height etc)
 are deliberately ignored.** Body mass comes from the analyst-selected
-weighing window (section 2) and every metric from the pipeline. On real
-data the disagreement is not subtle: PASCO's hangtime-based Jump Height
-column reported ~78 cm on a trace our take-off-velocity method scores
-at ~0.43 m (its hangtime column implies a 0.8 s flight, which is not
-physiologically credible). If any legacy workflow trusted those
-columns, reconcile before migrating.
+weighing window (section 2) and every metric from the pipeline. 
 
 ## 2. Body mass and the weighing window (`processing/weighing.py`)
 
@@ -77,8 +72,9 @@ from the sample nearest that click for `weighing_duration_s` (1 s
 default). Body weight (BW) is the window mean, SD the sample standard
 deviation (ddof = 1), and mass = BW / g.
 
-- A window shorter than `weighing_min_window_s` (0.5 s) is rejected —
-  the click was too late in the file.
+- A window shorter than `weighing_min_window_s` (0.5 s) is rejected. 
+  The start of the weighing period was selected too late into the trial
+   and needs to be re-selected.
 - **The logged decision is the raw click time**, never the snapped
   sample time or any derived onset value. A batch reprocess after a
   methods tweak (different filter, different onset rule) therefore
@@ -95,9 +91,7 @@ auditable in a way a heuristic is not.
 
 An optional zero-lag (filtfilt) low-pass Butterworth filter, default
 fourth-order at 50 Hz (Harry et al., 2022).
-
-**Position in the pipeline is fixed and load-bearing**: when filtering is
-enabled, the signal is filtered once, and BW and SD are computed from
+When filtering is enabled, the signal is filtered once, and BW and SD are computed from
 the *filtered* signal, so the BW ± SD threshold and the data it is
 applied to are consistent (`pipeline.py`). Filtering changes the
 quiet-standing SD (the onset threshold), so its position relative to the
@@ -105,7 +99,6 @@ weighing window cannot be left implicit. Under `raw` (no filter) this
 is moot.
 
 Two measured consequences, encoded in `tests/test_filtering.py`:
-
 - **Noise attenuation is real but partial**: a fourth-order 50 Hz filter
   at 1 kHz leaves ~33% of white-noise amplitude (the sub-cutoff power
   fraction). Filtering reduces the onset SD; it does not sanitise noise.
@@ -117,16 +110,14 @@ Two measured consequences, encoded in `tests/test_filtering.py`:
   detection and the refined take-off threshold both operate near edges.
 
 Per-platform defaults: HD plates are quiet enough that the reference
-workflow used raw force (`raw`); PASCO hardware is noisier, so a
+workflow used raw force (`raw`); PASCO hardware is often noisier, so a
 filtered preset for PASCO data should be validated before use (see
 Open items).
 
 ## 4. Movement onset (`processing/onset.py`)
 
 The BW ± 5 SD search is bounded by the shape of the force-time curve
-itself, so the propulsion phase
-and the landing spike can never be mistaken for onset:
-
+itself, so the propulsion phase and the landing spike can never be mistaken for onset:
 1. **Coarse take-off** brackets the jump: the first sample below
    `takeoff_coarse_n` (10 N) after the weighing window.
 2. The **peak force** between the end of the weighing window and the
@@ -137,24 +128,23 @@ and the landing spike can never be mistaken for onset:
 Within [weighing end, dip minimum], the initial onset is the first
 sample beyond the threshold (Owen et al., 2014). The direction of
 departure is recorded (`rising` / `declining`): a countermovement
-normally leaves BW downward first, but a **pre-movement rise** — the
-athlete shifting weight before the countermovement — is a legitimate
+normally leaves BW downward first, but a **pre-movement rise**, triggered by the the
+athlete shifting weight before the countermovement, is a legitimate
 `rising` onset found inside the bounded window, which is why the
 threshold is BW ± 5 SD and not BW − 5 SD alone. A countermovement too
 gradual to cross either threshold inside the window raises `OnsetError`
 (loud, analyst-visible) instead of latching onto the later propulsion
-rise — the failure mode of an unbounded search.
+rise. This is considered the failure mode of an unbounded search.
 
-Detection semantics, decided once and pinned by tests: the initial
-onset is the **first sample beyond** the BW ± 5 SD threshold (a
+The initial onset is the **first sample beyond** the BW ± 5 SD threshold (a
 threshold crossing, not a nearest match); the declining search runs
 weighing end → dip minimum, and the rising search also runs weighing
 end → dip minimum (provably identical to searching out to the window
 maximum for a first crossing: any BW + 5 SD crossing lies at or before
 the window maximum); and a threshold never crossed raises `OnsetError`
 instead of silently falling back to the sample nearest the dip
-minimum — a gradual countermovement is an analyst decision (re-weigh
-or manual adjustment), never a silent fallback.
+minimum. Where this happens, the analyst should decide whether to re-weigh
+or manually adjust the state threshold.
 
 **Manual onset placement.** When detection raises `OnsetError`, the
 inspector offers three paths: place the onset manually (click-to-place,
@@ -173,9 +163,9 @@ True onset is then refined by one of two methods (config:
   backward search because noise during the weighing period makes
   "last BW crossing" misidentification-prone.
 - **`search_last_bw`** (Street et al., 2001): backward search from the
-  BW ± 5 SD point to the last BW instance. **Not yet implemented** — the
-  semantics need pinning against Street et al. (2001) before shipping;
-  the pipeline raises `NotImplementedError` rather than guessing.
+  BW ± 5 SD point to the last instance where the force-time curve crosses
+  through BW. **Not yet implemented**; the pipeline raises `NotImplementedError`
+   rather than guessing.
 
 Whichever is used is recorded per trial in the output
 (`onset_method` column), which also enables a sensitivity comparison of
@@ -185,9 +175,7 @@ the two as a standalone methodological check.
 
 From onset onward: net force = Fz − BW; acceleration = net force / mass;
 velocity and displacement by trapezoidal integration of acceleration and
-velocity respectively (McMahon et al., 2018). This is the reference
-script's formulation, ported verbatim; parity on real Hawkin data is
-exact to floating-point tolerance (see Validation).
+velocity respectively (McMahon et al., 2018).
 
 ## 6. Jump phases (`processing/phases.py`)
 
@@ -206,23 +194,21 @@ contaminate the boundaries:
 
 The countermovement is split at the force minimum rather than at
 minimum velocity, matching where the summed lower-limb joint power
-(the paper's JP_SUM) turns negative and positive — which the paper
-showed is precisely detected from force-platform data alone:
+ turns negative and positive.
 
 - **Unloading ends** at the local minimum vertical force (the
   onset of negative JP_SUM): body weight is unloaded into the
   countermovement by this point.
 - The **eccentric phase** runs from unloading end to the first
-  positive-velocity sample (the onset of positive JP_SUM) and,
-  per the paper's recommendation, divides at minimum COM velocity
-  into:
+  positive-velocity sample and, per the paper's recommendation,
+   divides at minimum COM velocity into:
   - **yielding** (unloading end → minimum velocity): eccentric
     actions while the COM still accelerates downward;
   - **braking** (minimum velocity → first positive velocity):
     eccentric actions while the COM decelerates downward.
 - The **concentric phase** runs from braking end to take-off.
 
-The two taxonomies share the minimum-velocity and first-positive-
+The two event detection procedures share the minimum-velocity and first-positive-
 velocity instants (`unweighting_end`/`braking_end` under `mcmahon`;
 `yielding_end`/`braking_end` under `harry`), so the metrics' braking
 interval spans the same samples under both; `harry` adds the
@@ -234,8 +220,7 @@ since the unloading search window would be empty.
 
 ## 7. Take-off and landing (`processing/takeoff.py`)
 
-Take-off is identified in three stages per Lake et al. (2018), because
-a fixed threshold is exactly where plate noise and drift bite:
+Take-off is identified in three stages per Lake et al. (2018):
 
 1. **Coarse take-off** brackets the flight phase: the first sample
    below `takeoff_coarse_n` (10 N), and the **next sample above it**
@@ -251,14 +236,14 @@ a fixed threshold is exactly where plate noise and drift bite:
 The static threshold alternative (`takeoff_method="fixed_n"`,
 `takeoff_fixed_n=20 N`) is implemented and recorded per trial.
 
-**Known limitation, accepted deliberately.** The bracket is closed by
+**Known limitation:** The bracket is closed by
 the *next* sample above the coarse threshold, so a plate ring-down
 transient above 10 N in early flight terminates the bracket just as
-the landing would. Lake et al. (2018) specify no ring-down guards;
-matching the published method exactly is the trade-off.
+the landing would. Lake et al. (2018) specify no ring-down guards and
+matching the published method exactly is a known trade-off.
 
 Fallbacks are deliberate and logged as warnings on the result and the
-verification figure — never silent:
+verification figure:
 
 - No landing in the trace (truncated file): coarse take-off used.
 - Bracketed flight too short for a statistics window: coarse take-off
@@ -276,9 +261,8 @@ verification figure — never silent:
   to onset (negative by construction).
 - **Mass** = BW / g from the weighing window (section 2).
 
-Metric keys currently use provisional terminology. Renaming to the
-manuscript's terms (eccentric yielding / eccentric braking / concentric
-mean forces, per-sub-phase) is planned with a later export schema bump;
+Metric keys currently use provisional terminology. Renaming to match the terminology of
+McMahon et al. (2018) and Harry et al. (2020) is planned with a later export schema bump;
 the manuscript additionally reports time-to-take-off and mean force
 across all three sub-phases, which the current metrics module does not
 yet export. See Open items.
@@ -318,12 +302,6 @@ results file carries the schema v2 header before appending — a
 mismatched (e.g. v1) file raises `ExportError` instead of silently
 misaligning columns; rename or migrate such files before appending.
 
-Trial averaging (the manuscript averages five trials per session) is
-deliberately **outside** the per-trial pipeline; it belongs at the
-analysis level so the treatment of adjusted and discarded trials is an
-explicit, documented choice rather than an accident of implementation.
-It is not yet implemented.
-
 ## 10. Configuration (`config.py`)
 
 Every constant lives in one frozen dataclass; `docs` map one-to-one onto
@@ -345,20 +323,6 @@ code. Named presets reproduce a methods section by name:
 onset until `search_last_bw` is implemented (section 4). Filtering and
 the fixed 20 N take-off are implemented and tested.
 
-## 11. Validation
-
-Two layers, each catching what the previous cannot:
-
-1. **Synthetic signals with known truth** (`tests/`): a half-sine
-   impulse with closed-form velocity/displacement pins the integration;
-   piecewise-linear traces with exact integer boundaries pin the phase
-   and take-off logic including all fallbacks; noisy filter tests pin
-   interior fidelity, quiet-standing SD reduction, and edge behaviour.
-2. **Reader fixtures** (`tests/data/`): a real multi-run PASCO excerpt
-   (including ragged rows) and a Hawkin-layout fixture, so export-format
-   drift is caught by regression. The fixture files are withheld from
-   the repository for research ethics (participant data); these tests
-   skip with an explanatory message when the files are absent.
 
 ## Open items
 
@@ -369,13 +333,9 @@ rediscovered the hard way:
    unpick the `bw_search` preset.
 2. Manuscript metric terminology and the three per-sub-phase mean forces
    — a later export schema bump (v2 was taken by `onset_start_s`).
-3. Trial averaging and the inclusion/exclusion rule for adjusted and
-   discarded trials — analysis level, not pipeline.
-4. Filtered preset for PASCO data — the 50 Hz cutoff follows Harry et
-   al. (2022) on Hawkin hardware; PASCO noise characteristics differ
+3. Filtered preset for PASCO data — the 50 Hz cutoff follows Harry et
+   al. (2022); PASCO noise characteristics differ
    and should be re-derived, not assumed.
-5. No batch/CLI replay mode yet (per-session decision to defer).
-
 ## References
 
 - Chiu, L. Z. F., & Daehlin, T. E. (2020). Comparing numerical methods
@@ -393,7 +353,6 @@ rediscovered the hard way:
   Carden, P. (2018). Concurrent validity of a portable force plate
   using vertical jump force–time characteristics. *Journal of Applied
   Biomechanics*, 34(5), 410–413.
-  https://doi.org/10.1123/jab.2017-0371
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, 40(4), 96–106.
@@ -404,4 +363,3 @@ rediscovered the hard way:
 - Street, G., McMillan, S., Board, W., & Rasmussen, M. (2001). Sources of
   error in determining countermovement jump height with the impulse
   method. *Journal of Applied Biomechanics*, 17(1), 43–54.
-  https://doi.org/10.1123/jab.17.1.43
