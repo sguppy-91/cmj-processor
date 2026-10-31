@@ -198,13 +198,46 @@ exact to floating-point tolerance (see Validation).
 
 ## 6. Jump phases (`processing/phases.py`)
 
-McMahon et al. (2018) phase identification, searched only up to the
-coarse take-off so landing effects cannot contaminate the boundaries:
+Two phase-identification taxonomies, selected by `phase_method` and
+searched only up to the coarse take-off so landing effects cannot
+contaminate the boundaries:
+
+**`mcmahon` (default; McMahon et al., 2018)**
 
 - **Unweighting ends** at minimum velocity.
 - **Braking ends** at the first positive-velocity sample after the
   unweighting minimum.
 - Propulsion runs from braking end to take-off.
+
+**`harry` (Harry, Barker & Paquette, 2020)**
+
+The countermovement is split at the force minimum rather than at
+minimum velocity, matching where the summed lower-limb joint power
+(the paper's JP_SUM) turns negative and positive — which the paper
+showed is precisely detected from force-platform data alone:
+
+- **Unloading ends** at the local minimum vertical force (the
+  onset of negative JP_SUM): body weight is unloaded into the
+  countermovement by this point.
+- The **eccentric phase** runs from unloading end to the first
+  positive-velocity sample (the onset of positive JP_SUM) and,
+  per the paper's recommendation, divides at minimum COM velocity
+  into:
+  - **yielding** (unloading end → minimum velocity): eccentric
+    actions while the COM still accelerates downward;
+  - **braking** (minimum velocity → first positive velocity):
+    eccentric actions while the COM decelerates downward.
+- The **concentric phase** runs from braking end to take-off.
+
+The two taxonomies share the minimum-velocity and first-positive-
+velocity instants (`unweighting_end`/`braking_end` under `mcmahon`;
+`yielding_end`/`braking_end` under `harry`), so the metrics' braking
+interval spans the same samples under both; `harry` adds the
+`unloading_end` boundary. The boundary-override system, the
+verification figure, and the decision log follow whichever boundary
+set the active method produces. A velocity minimum at onset (no
+countermovement before take-off) raises `PhaseError` under `harry`,
+since the unloading search window would be empty.
 
 ## 7. Take-off and landing (`processing/takeoff.py`)
 
@@ -313,6 +346,7 @@ code. Named presets reproduce a methods section by name:
 | onset_method | `backtrack_ms` (100 ms) | `search_last_bw` |
 | filter_spec | none (raw force) | 4th-order, 50 Hz, zero-lag (Harry et al., 2022) |
 | takeoff_method | `refined` (flight middle-50% + 5 SD) | `fixed_n` (20 N) |
+| phase_method | `mcmahon` (unweighting at min velocity) | `mcmahon` |
 | takeoff_coarse_n | 10 | 10 |
 | landing_search_min_s | 0.25 | 0.25 |
 | landing_confirm_s | 0.05 | 0.05 |
@@ -363,6 +397,9 @@ rediscovered the hard way:
   to estimate vertical jump height using a force platform.
   *Measurement in Physical Education and Exercise Science*, 24(1),
   25–32.
+- Harry, J. R., Barker, L. A., & Paquette, M. R. (2020). A joint power
+  approach to define countermovement jump phases using force platforms.
+  *Medicine & Science in Sports & Exercise*, 52(5), 993–1000.
 - Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowsk, J., & Chowning,
   L. (2022). Low-pass filter effects on metrics of countermovement
   vertical jump performance. *Journal of Strength and Conditioning

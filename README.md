@@ -52,6 +52,9 @@ The analytical procedures implemented in this software were informed by the foll
   to estimate vertical jump height using a force platform.
   *Measurement in Physical Education and Exercise Science*, *24*(1),
   25–32.
+- Harry, J. R., Barker, L. A., & Paquette, M. R. (2020). A joint power
+  approach to define countermovement jump phases using force platforms.
+  *Medicine & Science in Sports & Exercise*, *52*(5), 993–1000.
 - Harry, J. R., Blinch, J., Barker, L. A., Krzyszkowski, J., & Chowning,
   L. (2022). Low-pass filter effects on metrics of countermovement
   vertical jump performance. *Journal of Strength and Conditioning
