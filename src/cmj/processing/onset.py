@@ -1,7 +1,7 @@
 """Movement onset detection.
 
 The BW +/- SD multiplier search is bounded by the shape of the
-force-time curve itself (the reference Excel workbook's method), so the
+force-time curve itself, so the
 propulsion phase and the landing spike can never be mistaken for onset:
 
 1. Coarse take-off brackets the jump: the first sample below the coarse

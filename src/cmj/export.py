@@ -3,8 +3,8 @@
 Schema v2. The row logs the analyst's decision (raw weighing-window click
 time, manual onset click time when placed, adjusted flag, boundary
 overrides) alongside the metrics so any session can replay the exact
-analysis. Metric names follow the reference script for now; renaming to
-manuscript terminology is a later schema bump.
+analysis. Metric names are provisional; renaming to manuscript
+terminology is a later schema bump.
 """
 from __future__ import annotations
 

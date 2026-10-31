@@ -42,6 +42,11 @@ class CMJConfig:
     takeoff_method: TakeoffMethod = "refined"
     takeoff_coarse_n: float = 10.0
     takeoff_fixed_n: float = 20.0
+    # Lake et al. (2018): flight statistics for the refined take-off
+    # threshold are taken this far inside each end of the flight phase
+    # bracketed by the first sample below and the next sample above
+    # takeoff_coarse_n.
+    takeoff_flight_trim_s: float = 0.030
     # Phase identification taxonomy. "mcmahon": unweighting ends at
     # minimum COM velocity (McMahon et al., 2018). "harry": unloading
     # ends at the local minimum vertical force, and the eccentric phase
@@ -49,20 +54,12 @@ class CMJConfig:
     # (Harry et al., 2020). Both end braking at the first
     # positive-velocity sample.
     phase_method: PhaseMethod = "mcmahon"
-    # Landing confirmation. Plate ring-down after take-off can cross the
-    # coarse threshold for 1-2 samples; a real landing holds. The
-    # landing search is delayed landing_search_min_s into flight (the
-    # reference Excel workbook searches from take-off row + 250
-    # samples), and a candidate must then stay above the coarse
-    # threshold for landing_confirm_s.
-    landing_search_min_s: float = 0.25
-    landing_confirm_s: float = 0.05
 
     @classmethod
     def preset(cls, name: str) -> "CMJConfig":
         presets: dict[str, CMJConfig] = {
-            # Verbatim port of CMJ_Analysis_Script.py: raw force, BW +/- 5 SD
-            # onset with a fixed 100 ms backtrack, flight-phase-refined take-off.
+            # Raw force, BW +/- 5 SD onset with a fixed 100 ms
+            # backtrack, Lake et al. (2018) refined take-off.
             "raw": cls(),
             # Backward-search methods: 50 Hz fourth-order zero-lag
             # Butterworth (Harry et al., 2022), backward search to the

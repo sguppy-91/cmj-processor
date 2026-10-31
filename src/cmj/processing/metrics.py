@@ -1,9 +1,9 @@
 """Jump metrics.
 
 Jump height from take-off velocity plus COM displacement at take-off
-(Chiu & Daehlin, 2020); the remaining metrics mirror the quantities the
-reference script reports. Renaming to manuscript terminology happens with
-the export-schema step so the parity port stays verbatim.
+(Chiu & Daehlin, 2020); the remaining metrics are the braking-phase net
+force and eccentric displacement that accompany it. Renaming to
+manuscript terminology happens with the export-schema step.
 """
 from __future__ import annotations
 

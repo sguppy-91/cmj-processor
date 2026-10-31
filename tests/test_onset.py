@@ -1,8 +1,8 @@
 """Onset-detection tests on piecewise traces with exact known indices.
 
 The BW +/- 5 SD search is bounded by the shape of the force trace
-(coarse take-off -> propulsion peak -> dip minimum), per the reference
-Excel workbook. These tests pin each bound with exact integer indices:
+(coarse take-off -> propulsion peak -> dip minimum). These tests pin
+each bound with exact integer indices:
 
 - a normal countermovement leaves BW downward ('declining');
 - a pre-movement force rise is a legitimate 'rising' onset found inside
