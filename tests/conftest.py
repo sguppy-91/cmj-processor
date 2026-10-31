@@ -44,3 +44,14 @@ def synth_config() -> CMJConfig:
 @pytest.fixture(scope="session")
 def synth_result(synth_trial, synth_config) -> object:
     return run_pipeline(synth_trial, synth_config, WEIGHING_START_S, config_preset="raw")
+
+
+@pytest.fixture(scope="session")
+def harry_config() -> CMJConfig:
+    """Default config with the Harry et al. (2020) phase taxonomy."""
+    return CMJConfig(phase_method="harry")
+
+
+@pytest.fixture(scope="session")
+def harry_result(synth_trial, harry_config) -> object:
+    return run_pipeline(synth_trial, harry_config, WEIGHING_START_S)

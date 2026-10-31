@@ -12,29 +12,33 @@ import numpy as np
 from .config import CMJConfig
 from .model import AnalysisResult
 
-BOUNDARY_TIMES = ("onset", "unweighting_end", "braking_end", "takeoff")
 BOUNDARY_COLORS = {
     "onset": "r",
     "unweighting_end": "orange",
+    "unloading_end": "orange",
+    "yielding_end": "gold",
     "braking_end": "purple",
     "takeoff": "brown",
 }
 BOUNDARY_LABELS = {
     "onset": "Onset",
     "unweighting_end": "Unweighting End",
+    "unloading_end": "Unloading End",
+    "yielding_end": "Yielding End",
     "braking_end": "Braking End",
     "takeoff": "Take-off",
 }
 
 
 def boundary_times(result: AnalysisResult) -> dict[str, float]:
-    """Onset-relative sample times of the four boundaries, for plotting."""
-    return {
-        "onset": float(result.kinematics.t[0]),
-        "unweighting_end": float(result.kinematics.t[result.boundaries["unweighting_end"]]),
-        "braking_end": float(result.kinematics.t[result.boundaries["braking_end"]]),
-        "takeoff": float(result.kinematics.t[result.takeoff.idx]),
-    }
+    """Onset-relative sample times of the detected boundaries, in phase
+    order (dict insertion order), for plotting."""
+    kin = result.kinematics
+    times = {"onset": float(kin.t[0])}
+    for name, idx in result.boundaries.items():
+        times[name] = float(kin.t[idx])
+    times["takeoff"] = float(kin.t[result.takeoff.idx])
+    return times
 
 
 def verification_figure(
@@ -59,8 +63,8 @@ def verification_figure(
                     label=f'Take-off thresh ({result.takeoff.threshold_n:.0f} N)')
 
     times = boundary_times(result)
-    for label in BOUNDARY_TIMES:
-        ax1.axvline(x=times[label], color=BOUNDARY_COLORS[label], linestyle="-",
+    for label, x in times.items():
+        ax1.axvline(x=x, color=BOUNDARY_COLORS[label], linestyle="-",
                     linewidth=1.5, label=BOUNDARY_LABELS[label])
 
     if title is None:
@@ -74,8 +78,8 @@ def verification_figure(
     ax2.plot(kin.t, kin.velocity, "r-", label="Velocity (m/s)")
     ax2.plot(kin.t, kin.displacement, "b-", label="Displacement (m)")
     ax2.axhline(y=0, color="k", linestyle="-", linewidth=0.5)
-    for label in BOUNDARY_TIMES:
-        ax2.axvline(x=times[label], color=BOUNDARY_COLORS[label], linestyle="-", linewidth=1.5)
+    for label, x in times.items():
+        ax2.axvline(x=x, color=BOUNDARY_COLORS[label], linestyle="-", linewidth=1.5)
     ax2.set_xlabel("Time (s)")
     ax2.set_ylabel("Velocity / Displacement")
     ax2.legend(loc="upper right", fontsize=8)

@@ -20,7 +20,19 @@ from ..processing import metrics as metrics_mod
 
 Action = Literal["accept", "adjust", "discard"]
 
-OVERRIDABLE_BOUNDARIES = ("unweighting_end", "braking_end", "takeoff")
+
+def phase_boundary_names(phase_method: str) -> tuple[str, ...]:
+    """Boundary names, in phase order, for a phase-identification method."""
+    if phase_method == "harry":
+        return ("unloading_end", "yielding_end", "braking_end")
+    if phase_method == "mcmahon":
+        return ("unweighting_end", "braking_end")
+    raise ValueError(f"Unknown phase method {phase_method!r}")
+
+
+def overridable_boundaries(phase_method: str) -> tuple[str, ...]:
+    """Phase boundaries plus take-off, in order, for the override system."""
+    return phase_boundary_names(phase_method) + ("takeoff",)
 
 
 @dataclass(frozen=True)
@@ -71,14 +83,16 @@ def apply_boundary_overrides(
 ) -> AnalysisResult:
     """Replace phase/take-off boundaries and recompute the affected metrics.
 
-    Overrides are local (onset-relative) indices. Ordering is validated:
-    0 <= unweighting_end <= braking_end <= takeoff < n.
+    Overrides are local (onset-relative) indices. Ordering is validated
+    along the active method's phase chain:
+    0 <= first <= ... <= last <= takeoff < n.
     """
-    unknown = set(overrides) - set(OVERRIDABLE_BOUNDARIES)
+    boundary_names = phase_boundary_names(config.phase_method)
+    unknown = set(overrides) - set(overridable_boundaries(config.phase_method))
     if unknown:
         raise ValueError(
             f"Unknown boundary override(s) {sorted(unknown)}; "
-            f"overridable: {list(OVERRIDABLE_BOUNDARIES)}"
+            f"overridable: {list(overridable_boundaries(config.phase_method))}"
         )
 
     n = result.kinematics.t.size
@@ -92,11 +106,15 @@ def apply_boundary_overrides(
         else:
             boundaries[key] = int(idx)
 
-    if not (0 <= boundaries["unweighting_end"] <= boundaries["braking_end"] <= takeoff.idx):
+    chain_names = boundary_names + ("takeoff",)
+    chain = [boundaries[name] for name in boundary_names] + [takeoff.idx]
+    if chain[0] < 0 or any(
+        chain[i] > chain[i + 1] for i in range(len(chain) - 1)
+    ):
         raise ValueError(
-            "Boundary overrides violate phase ordering "
-            f"(unweighting_end={boundaries['unweighting_end']}, "
-            f"braking_end={boundaries['braking_end']}, takeoff={takeoff.idx})"
+            "Boundary overrides violate phase ordering ("
+            + ", ".join(f"{name}={idx}" for name, idx in zip(chain_names, chain))
+            + ")"
         )
 
     recomputed = metrics_mod.compute_metrics(

@@ -23,6 +23,15 @@ def compute_metrics(
     v_takeoff = kinematics.velocity[takeoff.idx]
     s_takeoff = kinematics.displacement[takeoff.idx]
 
+    # The braking interval starts at minimum COM velocity under both
+    # taxonomies: unweighting_end (mcmahon) and yielding_end (harry)
+    # are the same instant.
+    braking_start = (
+        boundaries["yielding_end"]
+        if "yielding_end" in boundaries
+        else boundaries["unweighting_end"]
+    )
+
     return {
         "mass_kg": weighing.mass_kg,
         "jump_height_m": float((v_takeoff**2) / (2 * config.gravity) + s_takeoff),
@@ -30,9 +39,7 @@ def compute_metrics(
             kinematics.t[takeoff.idx] - kinematics.t[0]
         ),
         "mean_braking_force_n": float(
-            kinematics.net_force[
-                boundaries["unweighting_end"] : boundaries["braking_end"]
-            ].mean()
+            kinematics.net_force[braking_start : boundaries["braking_end"]].mean()
         ),
         "eccentric_displacement_m": float(
             kinematics.displacement[boundaries["braking_end"]]

@@ -137,6 +137,41 @@ class TestBoundaryOverrides:
             )
 
 
+class TestHarryBoundaryOverrides:
+    """The override system follows the active phase taxonomy: Harry
+    et al. (2020) boundaries are named and chained differently from the
+    McMahon et al. (2018) set."""
+
+    def test_harry_names_accepted(self, harry_result, harry_config):
+        new_idx = harry_result.boundaries["unloading_end"] - 10
+        overridden = apply_boundary_overrides(
+            harry_result, {"unloading_end": new_idx}, harry_config
+        )
+        assert overridden.boundaries["unloading_end"] == new_idx
+        assert any("overrides applied" in w for w in overridden.warnings)
+
+    def test_mcmahon_names_rejected_under_harry(self, harry_result, harry_config):
+        with pytest.raises(ValueError, match="Unknown boundary"):
+            apply_boundary_overrides(
+                harry_result, {"unweighting_end": 50}, harry_config
+            )
+
+    def test_harry_ordering_violation_rejected(self, harry_result, harry_config):
+        with pytest.raises(ValueError, match="ordering"):
+            apply_boundary_overrides(
+                harry_result,
+                {"unloading_end": harry_result.boundaries["yielding_end"] + 5},
+                harry_config,
+            )
+
+    def test_replay_harry_reproduces_metrics(self, synth_trial, harry_config):
+        decision = Decision(weighing_start_s=WEIGHING_START_S, action="accept")
+        original = apply_decision(decision, synth_trial, harry_config)
+        row = result_row(original, decision, META)
+        replayed = apply_decision(decision_from_row(row), synth_trial, harry_config)
+        assert replayed.metrics == original.metrics
+
+
 class TestInspectorHelpers:
     """Pure helpers behind the interactive windows."""
 
@@ -151,3 +186,11 @@ class TestInspectorHelpers:
         t_takeoff = kin.t[synth_result.takeoff.idx]
         assert nearest_boundary(synth_result, t_unweighting + 0.01) == "unweighting_end"
         assert nearest_boundary(synth_result, t_takeoff - 0.02) == "takeoff"
+
+    def test_nearest_boundary_harry(self, harry_result):
+        """The picker serves whichever boundaries the result carries."""
+        kin = harry_result.kinematics
+        t_unloading = kin.t[harry_result.boundaries["unloading_end"]]
+        t_yielding = kin.t[harry_result.boundaries["yielding_end"]]
+        assert nearest_boundary(harry_result, t_unloading + 0.001) == "unloading_end"
+        assert nearest_boundary(harry_result, t_yielding + 0.001) == "yielding_end"

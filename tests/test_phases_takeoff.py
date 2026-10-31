@@ -1,8 +1,8 @@
 """Phase-boundary and take-off tests on signals with exact known indices.
 
 The synthetic force trace is built from piecewise-linear segments so every
-boundary (unweighting end, braking end, coarse take-off, refined take-off)
-is an exact integer index, not a tolerance.
+boundary (unweighting/unloading end, yielding end, braking end, coarse
+take-off, refined take-off) is an exact integer index, not a tolerance.
 """
 import numpy as np
 import pytest
@@ -28,17 +28,73 @@ def make_synthetic_velocity() -> tuple[np.ndarray, int]:
     return v, 600
 
 
+def make_synthetic_force() -> np.ndarray:
+    """600-sample force trace whose dip minimum sits at index 100,
+    before the velocity minimum at 149."""
+    return np.concatenate(
+        [
+            np.linspace(800.0, 400.0, 101),  # 0..100: dip, minimum 400 N at 100
+            np.linspace(400.0, 2200.0, 499),  # 100..599: braking + propulsion rise
+        ]
+    )
+
+
 class TestPhaseBoundaries:
     def test_known_boundaries(self):
         v, coarse = make_synthetic_velocity()
-        boundaries = find_phase_boundaries(v, coarse)
+        boundaries = find_phase_boundaries(make_synthetic_force(), v, coarse)
         assert boundaries["unweighting_end"] == 149
         assert boundaries["braking_end"] == 301
 
     def test_velocity_never_positive_raises(self):
+        fz = make_synthetic_force()
         v = np.linspace(0.0, -1.0, 600)
         with pytest.raises(PhaseError, match="never turned positive"):
-            find_phase_boundaries(v, 600)
+            find_phase_boundaries(fz, v, 600)
+
+
+class TestHarryPhaseBoundaries:
+    """Harry et al. (2020) taxonomy: unloading ends at the local minimum
+    force, the eccentric phase splits at minimum velocity (yielding then
+    braking), and braking ends at the first positive-velocity sample."""
+
+    def test_known_boundaries(self):
+        v, coarse = make_synthetic_velocity()
+        boundaries = find_phase_boundaries(
+            make_synthetic_force(), v, coarse, phase_method="harry"
+        )
+        assert boundaries == {
+            "unloading_end": 100,
+            "yielding_end": 149,
+            "braking_end": 301,
+        }
+
+    def test_shared_instants_with_mcmahon(self):
+        """Min velocity and first positive velocity are the same instants
+        under both taxonomies, only named differently."""
+        v, coarse = make_synthetic_velocity()
+        fz = make_synthetic_force()
+        mcmahon = find_phase_boundaries(fz, v, coarse)
+        harry = find_phase_boundaries(fz, v, coarse, phase_method="harry")
+        assert mcmahon["unweighting_end"] == harry["yielding_end"]
+        assert mcmahon["braking_end"] == harry["braking_end"]
+        assert set(mcmahon) == {"unweighting_end", "braking_end"}
+        assert set(harry) == {"unloading_end", "yielding_end", "braking_end"}
+
+    def test_no_countermovement_raises(self):
+        """Velocity minimum at onset (never dips negative) leaves an empty
+        unloading search window: there is no countermovement to split."""
+        fz = make_synthetic_force()
+        v = np.linspace(0.001, 2.0, 600)  # minimum at index 0
+        with pytest.raises(PhaseError, match="no countermovement"):
+            find_phase_boundaries(fz, v, 600, phase_method="harry")
+
+    def test_unknown_method_raises(self):
+        v, coarse = make_synthetic_velocity()
+        with pytest.raises(ValueError, match="Unknown phase method"):
+            find_phase_boundaries(
+                make_synthetic_force(), v, coarse, phase_method="bogus"
+            )
 
 
 def make_takeoff_trace(
@@ -205,3 +261,32 @@ class TestLandingGuard:
         assert to.idx == 499
         assert to.flight_mean_n == pytest.approx(5.0)
         assert warnings == []
+
+
+class TestHarryPipelineIntegration:
+    """End to end on the shared synthetic trial: the Harry taxonomy
+    reports its own boundary names while the instants shared with the
+    McMahon taxonomy (minimum velocity, first positive velocity) keep
+    every metric identical."""
+
+    def test_boundary_names_and_order(self, harry_result):
+        assert set(harry_result.boundaries) == {
+            "unloading_end",
+            "yielding_end",
+            "braking_end",
+        }
+        b = harry_result.boundaries
+        assert 0 < b["unloading_end"] <= b["yielding_end"] <= b["braking_end"]
+        assert b["braking_end"] < harry_result.takeoff.idx
+
+    def test_unloading_sits_at_the_force_dip_bottom(self, harry_result):
+        """The synthetic dip bottoms out at 1.5 s (the trace's force
+        minimum), so the unloading boundary must land there."""
+        kin = harry_result.kinematics
+        t_unloading = kin.t[harry_result.boundaries["unloading_end"]]
+        assert 1.45 < t_unloading < 1.55
+
+    def test_metrics_match_mcmahon_on_shared_instants(
+        self, synth_result, harry_result
+    ):
+        assert harry_result.metrics == synth_result.metrics

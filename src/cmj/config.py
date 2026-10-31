@@ -12,6 +12,7 @@ from typing import Literal
 OnsetMethod = Literal["backtrack_ms", "search_last_bw"]
 TakeoffMethod = Literal["refined", "fixed_n"]
 EdgeMode = Literal["pad", "mirror"]
+PhaseMethod = Literal["mcmahon", "harry"]
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,13 @@ class CMJConfig:
     takeoff_method: TakeoffMethod = "refined"
     takeoff_coarse_n: float = 10.0
     takeoff_fixed_n: float = 20.0
+    # Phase identification taxonomy. "mcmahon": unweighting ends at
+    # minimum COM velocity (McMahon et al., 2018). "harry": unloading
+    # ends at the local minimum vertical force, and the eccentric phase
+    # divides at minimum COM velocity into yielding then braking
+    # (Harry et al., 2020). Both end braking at the first
+    # positive-velocity sample.
+    phase_method: PhaseMethod = "mcmahon"
     # Landing confirmation. Plate ring-down after take-off can cross the
     # coarse threshold for 1-2 samples; a real landing holds. The
     # landing search is delayed landing_search_min_s into flight (the

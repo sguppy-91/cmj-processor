@@ -20,9 +20,8 @@ from ..plotting import verification_figure
 from .decisions import (
     Decision,
     apply_boundary_overrides,
+    overridable_boundaries,
 )
-
-OVERRIDABLE = ("unweighting_end", "braking_end", "takeoff")
 
 
 def snap_to_second(time_s: float) -> float:
@@ -33,11 +32,8 @@ def snap_to_second(time_s: float) -> float:
 def nearest_boundary(result: AnalysisResult, clicked_time_s: float) -> str:
     """Name of the overridable boundary whose sample time is nearest."""
     kin = result.kinematics
-    candidates = {
-        "unweighting_end": result.boundaries["unweighting_end"],
-        "braking_end": result.boundaries["braking_end"],
-        "takeoff": result.takeoff.idx,
-    }
+    candidates: dict[str, int] = dict(result.boundaries)
+    candidates["takeoff"] = result.takeoff.idx
     return min(
         candidates, key=lambda name: abs(kin.t[candidates[name]] - clicked_time_s)
     )
@@ -234,14 +230,16 @@ def _onset_failed_choice(trial: Trial, message: str) -> str:
     return action["value"] or "discard"
 
 
-def _pick_boundary(result: AnalysisResult) -> tuple[str, int] | None:
+def _pick_boundary(
+    result: AnalysisResult, config: CMJConfig
+) -> tuple[str, int] | None:
     """Blocking single-click picker: returns (boundary name, local index)
     for the boundary nearest the clicked time, or None if cancelled."""
     plt = _pyplot()
     kin = result.kinematics
     fig, ax = plt.subplots(figsize=(11, 6))
     ax.plot(kin.t, kin.fz, lw=0.8)
-    for name in OVERRIDABLE:
+    for name in overridable_boundaries(config.phase_method):
         idx = (
             result.takeoff.idx
             if name == "takeoff"
@@ -321,7 +319,7 @@ def review_result(
         if value is None:  # window closed without a button
             return "discard", {}
         if value == "override":
-            picked = _pick_boundary(result)
+            picked = _pick_boundary(result, config)
             if picked is not None:
                 overrides[picked[0]] = picked[1]
             continue

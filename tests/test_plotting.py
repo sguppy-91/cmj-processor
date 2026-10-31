@@ -33,6 +33,28 @@ def test_boundary_times(synth_result):
     assert values == sorted(values)  # temporal order holds
 
 
+def test_boundary_times_harry(harry_result):
+    """The Harry taxonomy plots its own boundary set, still in phase order."""
+    times = boundary_times(harry_result)
+    assert set(times) == {
+        "onset",
+        "unloading_end",
+        "yielding_end",
+        "braking_end",
+        "takeoff",
+    }
+    values = list(times.values())
+    assert values == sorted(values)
+
+
+def test_verification_figure_harry_boundaries(harry_result, harry_config):
+    fig, (ax1, ax2) = verification_figure(harry_result, harry_config)
+    legend_labels = {label for label in ax1.get_legend_handles_labels()[1]}
+    assert "Unloading End" in legend_labels
+    assert "Yielding End" in legend_labels
+    assert "Braking End" in legend_labels
+
+
 def test_figure_with_coarse_fallback(synth_trial, synth_config):
     """A trace with no landing (coarse take-off, NaN threshold) must still
     plot, with the take-off threshold line skipped."""
