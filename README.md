@@ -8,9 +8,16 @@ analysis pipeline, with an analyst-in-the-loop interactive workflow.
 
 ## Status
 
-Under development. Step one (package skeleton, data model, Hawkin Dynamics
-reader, analysis core) is complete;
-interactive layer, PASCO reader, CLI batch mode, and export schema follow.
+Under development. Implemented: package skeleton, data model, Hawkin
+Dynamics and PASCO readers, analysis core (onset, optional filtering,
+integration, phase identification via McMahon et al. (2018) or Harry
+et al. (2020), Lake et al. (2018) refined or fixed take-off, metrics),
+the interactive analyst workflow (weighing-window selection, manual
+onset, boundary overrides, accept/adjust/discard gate), and the
+replayable results export (schema v2). Still to come: the
+`search_last_bw` onset method (unpicks the `bw_search` preset),
+batch/CLI replay mode, phase-metric export (schema v3), and trial
+averaging.
 
 ## Install
 
@@ -20,7 +27,7 @@ pip install -e .
 
 ## Usage
 
-Not yet wired to a GUI/CLI. Library use:
+Library use:
 
 ```python
 from cmj import CMJConfig, read_csv_any, run_pipeline
