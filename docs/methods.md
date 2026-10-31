@@ -51,8 +51,7 @@ far easier to audit than buried spreadsheet formulas.
 
 One trial per file. The analysis uses `Time (s)` and `Combined (N)`;
 `Left (N)` and `Right (N)` are present in exports but not used. Extra
-columns and UTF-8 BOMs are tolerated. This is the format the original
-`CMJ_Analysis_Script.py` was written against.
+columns and UTF-8 BOMs are tolerated.
 
 ### PASCO Capstone/SPARK (`readers/pasco.py`)
 
@@ -103,7 +102,7 @@ the *filtered* signal, so the BW ± SD threshold and the data it is
 applied to are consistent (`pipeline.py`). Filtering changes the
 quiet-standing SD (the onset threshold), so its position relative to the
 weighing window cannot be left implicit. Under `raw` (no filter) this
-is moot and the pipeline is the verbatim port of the reference script.
+is moot.
 
 Two measured consequences, encoded in `tests/test_filtering.py`:
 
@@ -125,7 +124,7 @@ Open items).
 ## 4. Movement onset (`processing/onset.py`)
 
 The BW ± 5 SD search is bounded by the shape of the force-time curve
-itself (the reference Excel workbook's method), so the propulsion phase
+itself, so the propulsion phase
 and the landing spike can never be mistaken for onset:
 
 1. **Coarse take-off** brackets the jump: the first sample below
@@ -146,22 +145,16 @@ gradual to cross either threshold inside the window raises `OnsetError`
 (loud, analyst-visible) instead of latching onto the later propulsion
 rise — the failure mode of an unbounded search.
 
-Parity with the reference Excel workbook (NSCAF_CMJ_Analysissheet,
-Analysis sheet): coarse take-off = Take-off Row (`L39`, MATCH of 10 N),
-peak = Peak Force Row (`L25`), dip minimum = Unloading End Row (`L21`),
-and the threshold selection in Unloading Start Fz (`L15`: BW + 5 SD when
-Baseline Max `L6` exceeds it, else BW − 5 SD). The declining search runs
-weighing-end → dip minimum and the rising search weighing-end →
-Baseline Max Row (`L7`); the port searches rising out to the dip
-minimum, which is provably identical for a first crossing (any BW + 5 SD
-crossing lies at or before the window maximum). Two deliberate
-deviations: the port takes the first sample beyond the threshold where
-Excel's approximate MATCH returns the last sample inside it (±1
-sample, and consistent with the reference Python script), and a
-threshold never crossed raises `OnsetError` where Excel's MATCH
-silently falls back to the sample nearest the dip minimum. Confirmed
-decision: the error stays — a gradual countermovement is an analyst
-decision (re-weigh or manual adjustment), never a silent fallback.
+Detection semantics, decided once and pinned by tests: the initial
+onset is the **first sample beyond** the BW ± 5 SD threshold (a
+threshold crossing, not a nearest match); the declining search runs
+weighing end → dip minimum, and the rising search also runs weighing
+end → dip minimum (provably identical to searching out to the window
+maximum for a first crossing: any BW + 5 SD crossing lies at or before
+the window maximum); and a threshold never crossed raises `OnsetError`
+instead of silently falling back to the sample nearest the dip
+minimum — a gradual countermovement is an analyst decision (re-weigh
+or manual adjustment), never a silent fallback.
 
 **Manual onset placement.** When detection raises `OnsetError`, the
 inspector offers three paths: place the onset manually (click-to-place,
@@ -175,7 +168,7 @@ and SD thresholds make the placement stale, so re-weighing clears it.
 True onset is then refined by one of two methods (config:
 `onset_method`):
 
-- **`backtrack_ms`** (default, reference script): step back a fixed
+- **`backtrack_ms`** (default): step back a fixed
   `onset_backtrack_s` (100 ms) from the initial onset. Chosen over a
   backward search because noise during the weighing period makes
   "last BW crossing" misidentification-prone.
@@ -241,42 +234,36 @@ since the unloading search window would be empty.
 
 ## 7. Take-off and landing (`processing/takeoff.py`)
 
-Two-stage detection, because a fixed threshold is exactly where plate
-noise and drift bite:
+Take-off is identified in three stages per Lake et al. (2018), because
+a fixed threshold is exactly where plate noise and drift bite:
 
-1. **Coarse take-off** brackets the flight phase: the first sample below
-   `takeoff_coarse_n` (10 N).
-2. **Refined take-off** (default): from the middle 50% of the bracketed
-   flight, mean + `sd_multiplier` × SD gives a data-driven threshold;
-   take-off is the first sample below it after braking ends. This adapts
-   to per-recording noise instead of assuming a fixed force level.
+1. **Coarse take-off** brackets the flight phase: the first sample
+   below `takeoff_coarse_n` (10 N), and the **next sample above it**
+   closes the bracket (the landing; `find_landing`).
+2. **Flight statistics window**: `takeoff_flight_trim_s` (30 ms) is
+   trimmed from each end of the bracketed flight, and the window's
+   mean + `sd_multiplier` × SD gives a data-driven threshold. This
+   adapts to per-recording noise instead of assuming a fixed force
+   level.
+3. **Refined take-off** (default): the first sample below the
+   threshold after braking ends.
 
-The landing that closes the flight window is **confirmed by two guards**
-against plate ring-down in the first milliseconds after take-off, where
-a 1–2 sample transient above 10 N is common and previously ended the
-flight window early — silently corrupting the flight statistics and the
-refined threshold:
+The static threshold alternative (`takeoff_method="fixed_n"`,
+`takeoff_fixed_n=20 N`) is implemented and recorded per trial.
 
-- the search does not begin until `landing_search_min_s` (0.25 s) of
-  flight has elapsed — the reference Excel workbook's own bound (its
-  Actual Landing is searched from take-off row + 250 samples);
-- a candidate must then stay above `takeoff_coarse_n` for
-  `landing_confirm_s` (0.05 s) — a real landing ramps to 1.5–2.5 × body
-  weight and holds; a transient does not.
-
-A confirmed landing also guarantees the middle-50% window spans real
-flight (≥ ~125 samples at 1 kHz), so flight statistics are never
-computed from a transient or an empty window.
+**Known limitation, accepted deliberately.** The bracket is closed by
+the *next* sample above the coarse threshold, so a plate ring-down
+transient above 10 N in early flight terminates the bracket just as
+the landing would. Lake et al. (2018) specify no ring-down guards;
+matching the published method exactly is the trade-off.
 
 Fallbacks are deliberate and logged as warnings on the result and the
 verification figure — never silent:
 
 - No landing in the trace (truncated file): coarse take-off used.
+- Bracketed flight too short for a statistics window: coarse take-off
+  used.
 - Refined threshold never crossed: coarse take-off used.
-
-The manuscript's static threshold (`takeoff_method="fixed_n"`,
-`takeoff_fixed_n=20 N`) is implemented as an alternative and recorded
-per trial.
 
 ## 8. Metrics (`processing/metrics.py`)
 
@@ -289,12 +276,12 @@ per trial.
   to onset (negative by construction).
 - **Mass** = BW / g from the weighing window (section 2).
 
-Metric keys currently use the reference script's terminology. Renaming
-to the manuscript's terms (eccentric yielding / eccentric braking /
-concentric mean forces, per-sub-phase) is planned with a later export
-schema bump; the manuscript additionally reports time-to-take-off and
-mean force across all three sub-phases, which the current metrics module
-does not yet export. See Open items.
+Metric keys currently use provisional terminology. Renaming to the
+manuscript's terms (eccentric yielding / eccentric braking / concentric
+mean forces, per-sub-phase) is planned with a later export schema bump;
+the manuscript additionally reports time-to-take-off and mean force
+across all three sub-phases, which the current metrics module does not
+yet export. See Open items.
 
 ## 9. Analyst decisions and the audit trail (`app/decisions.py`, `export.py`)
 
@@ -338,18 +325,17 @@ It is not yet implemented.
 Every constant lives in one frozen dataclass; `docs` map one-to-one onto
 code. Named presets reproduce a methods section by name:
 
-| Parameter | `raw` (reference script) | `bw_search` (backward search) |
+| Parameter | `raw` | `bw_search` (backward search) |
 |---|---|---|
 | gravity | 9.81 | 9.81 |
 | sd_multiplier | 5 | 5 |
 | weighing_duration_s | 1.0 | 1.0 |
 | onset_method | `backtrack_ms` (100 ms) | `search_last_bw` |
 | filter_spec | none (raw force) | 4th-order, 50 Hz, zero-lag (Harry et al., 2022) |
-| takeoff_method | `refined` (flight middle-50% + 5 SD) | `fixed_n` (20 N) |
+| takeoff_method | `refined` (Lake et al., 2018) | `fixed_n` (20 N) |
 | phase_method | `mcmahon` (unweighting at min velocity) | `mcmahon` |
 | takeoff_coarse_n | 10 | 10 |
-| landing_search_min_s | 0.25 | 0.25 |
-| landing_confirm_s | 0.05 | 0.05 |
+| takeoff_flight_trim_s | 0.030 | 0.030 |
 
 **Caveat**: loading `bw_search` today raises `NotImplementedError` at
 onset until `search_last_bw` is implemented (section 4). Filtering and
@@ -357,19 +343,14 @@ the fixed 20 N take-off are implemented and tested.
 
 ## 11. Validation
 
-Three layers, each catching what the previous cannot:
+Two layers, each catching what the previous cannot:
 
-1. **Parity with the reference implementation.** The pipeline reproduces
-   `CMJ_Analysis_Script.py` exactly (to 1e-9 relative tolerance) on real
-   Hawkin data: BW, SD, mass, onset indices and strategy, phase
-   boundaries, take-off (refined and both fallback paths), flight
-   statistics, and all metrics.
-2. **Synthetic signals with known truth** (`tests/`): a half-sine
+1. **Synthetic signals with known truth** (`tests/`): a half-sine
    impulse with closed-form velocity/displacement pins the integration;
    piecewise-linear traces with exact integer boundaries pin the phase
    and take-off logic including all fallbacks; noisy filter tests pin
    interior fidelity, quiet-standing SD reduction, and edge behaviour.
-3. **Reader fixtures** (`tests/data/`): a real multi-run PASCO excerpt
+2. **Reader fixtures** (`tests/data/`): a real multi-run PASCO excerpt
    (including ragged rows) and a Hawkin-layout fixture, so export-format
    drift is caught by regression. The fixture files are withheld from
    the repository for research ethics (participant data); these tests
@@ -404,6 +385,11 @@ rediscovered the hard way:
   L. (2022). Low-pass filter effects on metrics of countermovement
   vertical jump performance. *Journal of Strength and Conditioning
   Research*, 36(5), 1459–1467.
+- Lake, J., Mundy, P., Comfort, P., McMahon, J. J., Suchomel, T. J., &
+  Carden, P. (2018). Concurrent validity of a portable force plate
+  using vertical jump force–time characteristics. *Journal of Applied
+  Biomechanics*, 34(5), 410–413.
+  https://doi.org/10.1123/jab.2017-0371
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, 40(4), 96–106.

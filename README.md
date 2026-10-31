@@ -9,7 +9,7 @@ analysis pipeline, with an analyst-in-the-loop interactive workflow.
 ## Status
 
 Under development. Step one (package skeleton, data model, Hawkin Dynamics
-reader, analysis core ported from `CMJ_Analysis_Script.py`) is complete;
+reader, analysis core) is complete;
 interactive layer, PASCO reader, CLI batch mode, and export schema follow.
 
 ## Install
@@ -59,6 +59,10 @@ The analytical procedures implemented in this software were informed by the foll
   L. (2022). Low-pass filter effects on metrics of countermovement
   vertical jump performance. *Journal of Strength and Conditioning
   Research*, *36*(5), 1459–1467.
+- Lake, J., Mundy, P., Comfort, P., McMahon, J. J., Suchomel, T. J., &
+  Carden, P. (2018). Concurrent validity of a portable force plate
+  using vertical jump force-time characteristics. *Journal of Applied
+  Biomechanics*, *34*(5), 410–413. https://doi.org/10.1123/jab.2017-0371
 - McMahon, J. J., Suchomel, T. J., Lake, J. P., & Comfort, P. (2018).
   Understanding the key phases of the countermovement jump force-time
   curve. *Strength & Conditioning Journal*, *40*(4), 96–106.
