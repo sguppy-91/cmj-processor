@@ -38,7 +38,11 @@ cmj-gui
 ```
 
 Or double-click `scripts/launch-cmj-gui.command` (a copy can live
-anywhere - the Desktop is a good spot).
+anywhere - the Desktop is a good spot). A copied launcher uses the last
+project location or asks you to choose the project folder and remembers
+your choice. If the project moves, it asks again. The launcher uses the
+project's `.venv`; create it with `python3 -m venv .venv`, then install
+with `.venv/bin/python -m pip install -e .` from the project folder.
 
 ## Methods
 
